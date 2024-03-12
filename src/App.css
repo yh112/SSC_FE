@@ -1,38 +1,77 @@
 .App {
-  text-align: center;
+  text-align: left;
+  font-family: monospace;
+}
+.code-editor {
+  position: relative;
+  width: 100%;
+  height: 90%;
+  border-radius: 0.25rem;
+
+  box-sizing: border-box;
+  display: flex;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+textarea {
+  font-size: 1.25rem;
+}
+
+.code-editor__textarea,
+.code-editor__present {
+  color: white;
+  font-size: 1.25rem;
+  position: absolute;
+  margin: 0;
+  margin-left: 30px;
+  white-space: pre-wrap;
+  text-align: left;
+  width: calc(100% - 1em);
+  height: calc(100% - 1em);
+  -moz-tab-size: 4;
+  tab-size: 4;
+}
+
+.code-editor__textarea {
+  caret-color: gray;
+  /* color: black; */
+  color: transparent;
+  background-color: transparent;
+  z-index: 1;
+  border: none;
+  resize: none;
+  outline: none;
+}
+
+.code-editor__present {
+  background-color: white;
+  color: #c9d1d9;
+  z-index: 0;
+  /* border-radius: 0.25rem; */
+  text-overflow: ellipsis;
+}
+
+.code-editor__present span {
+  font-size: 1.25rem;
+}
+
+.code-editor code {
+  padding: 2px;
+}
+
+.code-editor .code__lines {
+  position: absolute;
+  box-sizing: border-box;
+  height: 100%;
+  margin: 0;
+  font-size: 1.25rem;
+  white-space: pre-wrap;
+  text-align: center;
+  font-family: monospace;
+  
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
-}
-
-.App-link {
-  color: #61dafb;
-}
-
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
 }
