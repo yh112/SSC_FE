@@ -16,6 +16,12 @@ textarea {
   font-size: 1.25rem;
 }
 
+.text-viewer {
+
+  position: absolute;
+  top: 500px;
+}
+
 .code-editor__textarea,
 .code-editor__present {
   color: white;
