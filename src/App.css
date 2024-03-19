@@ -35,6 +35,8 @@ textarea {
   height: calc(100% - 1em);
   -moz-tab-size: 4;
   tab-size: 4;
+  height: fit-content;
+  width: 100%;
 }
 
 .code-editor__textarea {
