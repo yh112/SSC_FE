@@ -15,11 +15,12 @@ const CodeEditor = () => {
   const [code, setCode] = useState("");
   const [copyCode, setCopyCode] = useState("");
   const [language, setLanguage] = useState("java");
-  const [cursor, setCursor] = useState(0);
-  let tabCount = 0;
+  const [start, setStart] = useState(0);
+  const [end, setEnd] = useState(0);
   let leftBracketPosition = [];
   let rightBracketPosition = [];
   let enterCount = 0;
+  let tabCount = 0;
 
   const client = useRef();
   let { editorId } = useParams();
@@ -35,41 +36,38 @@ const CodeEditor = () => {
 
   const connect = () => {
     client.current = new StompJs.Client({
-      brokerURL: "ws://43.201.78.73:8080/stomp",
+      brokerURL: "ws://3.34.52.212:8080/stomp",
       onConnect: () => {
         subscribe();
       },
     });
 
     client.current.webSocketFactory = function () {
-      return new SockJS("http://43.201.78.73:8080/stomp");
+      return new SockJS("http://3.34.52.212:8080/stomp");
     };
 
     client.current.activate();
   };
 
-  //TODO: 실시간으로 데이터 주는 코드 추가
-  const publish = () => {
+  const publish = (inputCode) => {
     if (!client.current.connected) return;
 
     client.current.publish({
       destination: "/app/message",
       body: JSON.stringify({
         roomId: editorId,
-        code: code,
-        start: cursor,
+        code: inputCode,
         line: lineCount,
       }),
     });
   };
 
-  //TODO: 실시간으로 데이터 받는 코드 추가
   const subscribe = () => {
     console.log("subscribe: " + client.current.connected);
     client.current.subscribe(`/subscribe/notice/${editorId}`, (body) => {
       const json_body = JSON.parse(body.body);
       console.log(json_body);
-      setCopyCode(json_body.code);
+      changeCode(json_body.code, false);
       //   addCode(json_body.code, json_body.start);
     });
   };
@@ -89,7 +87,7 @@ const CodeEditor = () => {
 
   useEffect(() => {
     setLineCount(code.split("\n").length);
-    publish();
+    // publish();
   }, [code]);
 
   const findBracket = () => {
@@ -118,12 +116,8 @@ const CodeEditor = () => {
   }, [code, language]);
 
   useEffect(() => {
-    textRef.current.setSelectionRange(cursor, cursor);
-  }, [cursor]);
-
-  const changeCode = (e) => {
-    setCode(e.target.value);
-  };
+    textRef.current.setSelectionRange(start, end);
+  }, [start, end]); //TODO: 이거 켜놓으면 드래그 안 되고 안 키면 tap이 안 됨
 
   const createMarkUpCode = (code) => ({
     __html: code,
@@ -133,46 +127,58 @@ const CodeEditor = () => {
     setLanguage(e.target.value);
   };
 
-  //   const handleResizeHeight = useCallback(() => {
-  //     textRef.current.style.height = textRef.current.scrollHeight + "px";
-  //   }, []);
-
   const handleResizeHeight = () => {
-    textRef.current.style.height = "auto";
     textRef.current.style.height = textRef.current.scrollHeight + "px";
   };
 
+  const changeCode = (inputCode, myState) => {
+    //setCode(e.target.value);
+
+    if(myState) {
+      console.log(inputCode);
+      setCode(inputCode);
+      publish(inputCode);
+    } else {
+      if(inputCode === code) return;
+      setCode(inputCode);
+    }
+  };
+
   const handleKeydown = (e) => {
-    // setCursor(e.target.selectionStart);
-    console.log(e.target.selectionStart);
+    const start = e.target.selectionStart;
+    const end = e.target.selectionEnd;
+    let value;
+    setStart(start);
+    setEnd(end);
+
+    console.log(e);
+    
     if (e.key === "Tab") {
       e.preventDefault();
-      const start = e.target.selectionStart;
-      const end = e.target.selectionEnd;
-      const value = code.substring(0, start) + "\t" + code.substring(end);
+      value = code.substring(0, start) + "\t" + code.substring(end);
       textRef.value = value;
-      setCursor(start + 1);
-      setCode(value);
+      setStart(start + 1);
+      setEnd(end + 1);
+      changeCode(value, true);
+      //setCode(value);
     } else if (e.key === "{") {
       e.preventDefault();
-      const start = e.target.selectionStart;
-      const end = e.target.selectionEnd;
-      const value = code.substring(0, start) + "{}" + code.substring(end);
-      textRef.value = value;
-      setCursor(start + 1);
-      setCode(value);
+      value = code.substring(0, start) + "{}" + code.substring(end);
+      setStart(start + 1);
+      changeCode(value, true);
+      setEnd(end + 1);
+      //setCode(value);
     } else if (e.key === "(") {
       e.preventDefault();
-      const start = e.target.selectionStart;
-      const end = e.target.selectionEnd;
-      const value = code.substring(0, start) + "()" + code.substring(end);
+      value = code.substring(0, start) + "()" + code.substring(end);
       textRef.value = value;
-      setCursor(start + 1);
-      setCode(value);
+      setStart(start + 1);
+      setEnd(end + 1);
+      changeCode(value, true);
+      //setCode(value);
     } else if (e.key === "Enter") {
       e.preventDefault();
       findBracket();
-      const start = e.target.selectionStart;
       if (leftBracketPosition.length > 0) {
         for (let i = 0; i < leftBracketPosition.length; i++) {
           if (start > leftBracketPosition[i]) {
@@ -185,28 +191,15 @@ const CodeEditor = () => {
             enterCount++;
           }
         }
-        console.log(
-          "tab: " +
-            tabCount +
-            " enter: " +
-            enterCount +
-            " left: " +
-            leftBracketPosition +
-            " right: " +
-            rightBracketPosition +
-            " pos: " +
-            start
-        );
       }
 
       if (tabCount === 0) {
         //그냥 엔터
-        const value = code.substring(0, start) + "\n" + code.substring(start);
+        value = code.substring(0, start) + "\n" + code.substring(start);
         textRef.value = value;
-        setCode(value);
       } else if (tabCount > 0 && enterCount > 0) {
         //바로 뒤에 닫힌 대괄호가 있을 때
-        const value =
+        value =
           code.substring(0, start) +
           "\n" +
           "\t".repeat(tabCount) +
@@ -214,23 +207,37 @@ const CodeEditor = () => {
           "\t".repeat(tabCount - 1) +
           code.substring(start);
         textRef.value = value;
-        setCode(value);
+        changeCode(value, true);
+        //setCode(value);
       } else {
         //대괄호 있을 때
-        const value =
+        value =
           code.substring(0, start) +
           "\n" +
           "\t".repeat(tabCount) +
           code.substring(start);
         textRef.value = value;
-        setCode(value);
       }
-      setCursor(start + tabCount + 1);
+      changeCode(value, true);
+      //setCode(value);
+      setStart(start + tabCount + 1);
+      setEnd(end + tabCount + 1);
     }
+    // else if(e.keyCode >= 65 && e.keyCode <= 90) {
+    //   textRef.current.value += e.key;
+    //   changeCode(textRef.current.value, true);
+    // }   // else {
+    //   e.preventDefault();
+    // }
   };
+
+//   const copyClipboard = () => {
+//     navigator.clipboard.writeText("Hello, world!");
+//   };
 
   return (
     <div>
+      {/* <button onClick={copyClipboard}>Code Share</button> */}
       <select onChange={(e) => changeLanguage(e)}>
         <option value="java">Java</option>
         <option value="javascript">Javascript</option>
@@ -251,11 +258,11 @@ const CodeEditor = () => {
             ref={textRef}
             onScroll={handleScrollChange}
             value={code}
-            onChange={changeCode}
+            onChange={(e) => changeCode(e.target.value, true)}
             className="code-editor__textarea"
             rows={1}
+            onKeyDown={(e) => handleKeydown(e)}
             onInput={handleResizeHeight}
-            onKeyDown={handleKeydown}
             autoComplete="false"
             spellCheck="false"
           />

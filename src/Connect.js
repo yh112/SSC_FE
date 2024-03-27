@@ -17,7 +17,7 @@ const Connect = () => {
               console.error(error);
             }
           }
-      
+          console.log("click")
           fetchChatRoom();
     }
     
