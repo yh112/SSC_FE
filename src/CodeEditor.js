@@ -1,22 +1,24 @@
 import React, { useCallback, useEffect, useState, useRef } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useLocation } from "react-router-dom";
 import useEditorScroll from "./useEditorScroll";
 import SockJS from "sockjs-client";
-// import axios from "axios";
+import axios from "axios";
 import * as StompJs from "@stomp/stompjs";
 import "./App.css";
 import hljs from "highlight.js";
 import "highlight.js/styles/github.css";
+import UserList from "./Components/UserList";
+import Folder from "./Components/Folder";
 
 const CodeEditor = () => {
   const { lineRef, textRef, handleScrollChange } = useEditorScroll();
   const [lineCount, setLineCount] = useState(0);
   const [highlightedHTML, setHighlightedCode] = useState("");
   const [code, setCode] = useState("");
-  const [copyCode, setCopyCode] = useState("");
   const [language, setLanguage] = useState("java");
   const [start, setStart] = useState(0);
   const [end, setEnd] = useState(0);
+  const [users, setUsers] = useState([]);
   let leftBracketPosition = [];
   let rightBracketPosition = [];
   let enterCount = 0;
@@ -30,9 +32,20 @@ const CodeEditor = () => {
    */
   useEffect(() => {
     connect();
-
+    updateUsers()
     return () => disconnect();
   }, []);
+
+  const updateUsers = () => {
+    axios
+      .post(`/editor/${editorId}`)
+      .then((response) => {
+        console.log(response.data);
+      })
+      .catch((error) => {
+        console.error("Error fetching data:", error);
+      });
+  };
 
   const connect = () => {
     client.current = new StompJs.Client({
@@ -68,7 +81,7 @@ const CodeEditor = () => {
       const json_body = JSON.parse(body.body);
       console.log(json_body);
       changeCode(json_body.code, false);
-      //   addCode(json_body.code, json_body.start);
+      setUsers(json_body.userList);
     });
   };
 
@@ -117,7 +130,7 @@ const CodeEditor = () => {
 
   useEffect(() => {
     textRef.current.setSelectionRange(start, end);
-  }, [start, end]); //TODO: 이거 켜놓으면 드래그 안 되고 안 키면 tap이 안 됨
+  }, [start, end]);
 
   const createMarkUpCode = (code) => ({
     __html: code,
@@ -132,14 +145,12 @@ const CodeEditor = () => {
   };
 
   const changeCode = (inputCode, myState) => {
-    //setCode(e.target.value);
-
-    if(myState) {
+    if (myState) {
       console.log(inputCode);
       setCode(inputCode);
       publish(inputCode);
     } else {
-      if(inputCode === code) return;
+      if (inputCode === code) return;
       setCode(inputCode);
     }
   };
@@ -152,7 +163,7 @@ const CodeEditor = () => {
     setEnd(end);
 
     console.log(e);
-    
+
     if (e.key === "Tab") {
       e.preventDefault();
       value = code.substring(0, start) + "\t" + code.substring(end);
@@ -160,14 +171,12 @@ const CodeEditor = () => {
       setStart(start + 1);
       setEnd(end + 1);
       changeCode(value, true);
-      //setCode(value);
     } else if (e.key === "{") {
       e.preventDefault();
       value = code.substring(0, start) + "{}" + code.substring(end);
       setStart(start + 1);
       changeCode(value, true);
       setEnd(end + 1);
-      //setCode(value);
     } else if (e.key === "(") {
       e.preventDefault();
       value = code.substring(0, start) + "()" + code.substring(end);
@@ -175,7 +184,28 @@ const CodeEditor = () => {
       setStart(start + 1);
       setEnd(end + 1);
       changeCode(value, true);
-      //setCode(value);
+    } else if (e.key === "[") {
+      //0번째에서 대괄호 넣으면 끝으로 감(수정하기)
+      e.preventDefault();
+      value = code.substring(0, start) + "[]" + code.substring(end);
+      textRef.value = value;
+      setStart(start + 1);
+      setEnd(end + 1);
+      changeCode(value, true);
+    } else if (e.key === "'") {
+      e.preventDefault();
+      value = code.substring(0, start) + "''" + code.substring(end);
+      textRef.value = value;
+      setStart(start + 1);
+      setEnd(end + 1);
+      changeCode(value, true);
+    } else if (e.key === '"') {
+      e.preventDefault();
+      value = code.substring(0, start) + '""' + code.substring(end);
+      textRef.value = value;
+      setStart(start + 1);
+      setEnd(end + 1);
+      changeCode(value, true);
     } else if (e.key === "Enter") {
       e.preventDefault();
       findBracket();
@@ -208,7 +238,6 @@ const CodeEditor = () => {
           code.substring(start);
         textRef.value = value;
         changeCode(value, true);
-        //setCode(value);
       } else {
         //대괄호 있을 때
         value =
@@ -219,25 +248,21 @@ const CodeEditor = () => {
         textRef.value = value;
       }
       changeCode(value, true);
-      //setCode(value);
       setStart(start + tabCount + 1);
       setEnd(end + tabCount + 1);
     }
-    // else if(e.keyCode >= 65 && e.keyCode <= 90) {
-    //   textRef.current.value += e.key;
-    //   changeCode(textRef.current.value, true);
-    // }   // else {
-    //   e.preventDefault();
-    // }
   };
 
-//   const copyClipboard = () => {
-//     navigator.clipboard.writeText("Hello, world!");
-//   };
+  const location = useLocation();
+  const url = location.pathname;
+
+  const copyClipboard = () => {
+    navigator.clipboard.writeText(url);
+  };
 
   return (
     <div>
-      {/* <button onClick={copyClipboard}>Code Share</button> */}
+      <button onClick={copyClipboard}>Code Share</button>
       <select onChange={(e) => changeLanguage(e)}>
         <option value="java">Java</option>
         <option value="javascript">Javascript</option>
@@ -245,6 +270,8 @@ const CodeEditor = () => {
         <option value="c">C</option>
         <option value="cpp">C++</option>
       </select>
+
+      <UserList users={users} />
 
       <div className="code-editor">
         <div className="code__lines" ref={lineRef}>
@@ -273,9 +300,6 @@ const CodeEditor = () => {
             ></code>
           </pre>
         </div>
-      </div>
-      <div>
-        <textarea className="text-viewer" value={copyCode}></textarea>
       </div>
     </div>
   );
