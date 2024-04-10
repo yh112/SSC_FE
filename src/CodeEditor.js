@@ -38,7 +38,7 @@ const CodeEditor = () => {
   }, []);
 
   const updateUsers = () => {
-    axios
+    API
       .post(`/editor/${editorId}`)
       .then((response) => {
         console.log(response.data);
@@ -156,14 +156,21 @@ const CodeEditor = () => {
     }
   };
 
+  const updateCode = (key) => {
+    API.post(`/code/${editorId}`, {
+      code: key.target.value,
+    }).then((response) => {
+      console.log(response.data);
+    });
+  };
+
   const handleKeydown = (e) => {
     const start = e.target.selectionStart;
     const end = e.target.selectionEnd;
     let value;
+    //updateCode(e.key);
     setStart(start);
     setEnd(end);
-
-    console.log(e);
 
     if (e.key === "Tab") {
       e.preventDefault();

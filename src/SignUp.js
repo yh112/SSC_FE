@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import UserInput from "./Components/UserInput";
 import BackButton from "./Components/BackButton";
 import axios from "axios";
+import API from "./BaseUrl";
 
 function SignUp() {
   const [userInfo, setUserInfo] = useState({
@@ -21,7 +22,7 @@ function SignUp() {
 
   const navigate = useNavigate();
   const handleSignUp = () => {
-    axios
+    API
     .post("/login/register", {
       userId: String(userInfo.userId),
       password: String(userInfo.password),
