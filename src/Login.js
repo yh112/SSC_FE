@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import UserInput from "./Components/UserInput";
 import UserButton from "./Components/UserButton";
 import axios from "axios";
+import API from "./BaseUrl";
 
 function Login() {
   const [userInfo, setUserInfo] = useState({
@@ -26,7 +27,7 @@ function Login() {
 
   const handleLogin = () => {
     console.log(userInfo);
-    axios
+    API
       .get("/login/login", {
         userId: String(userInfo.id),
         password: String(userInfo.password),
