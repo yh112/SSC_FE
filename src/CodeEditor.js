@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useState, useRef } from "react";
 import { useParams, useLocation } from "react-router-dom";
 import useEditorScroll from "./useEditorScroll";
 import SockJS from "sockjs-client";
-import axios from "axios";
 import * as StompJs from "@stomp/stompjs";
 import "./App.css";
 import hljs from "highlight.js";
@@ -10,7 +9,7 @@ import "highlight.js/styles/github.css";
 import UserList from "./Components/UserList";
 import Folder from "./Components/Folder";
 import DragnDrop from "./Components/DragnDrop";
-
+import API from "./BaseUrl";
 const CodeEditor = () => {
   const { lineRef, textRef, handleScrollChange } = useEditorScroll();
   const [lineCount, setLineCount] = useState(0);

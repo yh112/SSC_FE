@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import UserInput from "./Components/UserInput";
 import BackButton from "./Components/BackButton";
-import axios from "axios";
 import API from "./BaseUrl";
 
 function SignUp() {
