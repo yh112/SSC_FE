@@ -1,9 +1,9 @@
 import React from "react";
-
-const UserInput = ({ type, value, name, onChange}) => {
+import "../App.css"
+const UserInput = ({ type, value, error, name, onChange}) => {
   return (
     <input
-      className="userInput"
+      className={error ? "loginErrorUserInput" : "userInput" }
       type={type}
       value={value}
       onChange={onChange}

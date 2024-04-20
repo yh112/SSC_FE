@@ -1,7 +1,10 @@
 .App {
   text-align: left;
   font-family: monospace;
+  width: 100vw;
+  min-height: 100vh;
 }
+
 .code-editor {
   position: relative;
   width: 100%;
@@ -52,7 +55,6 @@ textarea {
 }
 
 .code-editor__present {
-  background-color: white;
   color: #c9d1d9;
   z-index: 0;
   /* border-radius: 0.25rem; */
@@ -69,17 +71,229 @@ textarea {
 .code-editor .code__lines {
   position: absolute;
   box-sizing: border-box;
-  height: 100%;
+  height: 100vh;
   margin: 0;
   font-size: 1.25rem;
   white-space: pre-wrap;
   text-align: center;
   font-family: monospace;
-  
+  color: #FFFFFF;
+
   &::-webkit-scrollbar {
     display: none;
   }
 }
 
-@media (prefers-reduced-motion: no-preference) {
+.backBtn {
+  color: #FFFFFF;
 }
+
+.textKr {
+  color: #D6D6D6;
+  font-size: 24px;
+  font-weight: 500;
+  line-height: 34.75px;
+}
+
+.textEn {
+  color: #717171;
+  font-size: 24px;
+  font-weight: 500;
+  line-height: 34.75px;
+}
+
+.mainFrameCol {
+  background: #0B0D15;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  gap: 80px;
+  overflow: auto;
+  background-attachment: fixed;
+}
+
+.mainFrameRow {
+  background: #0B0D15;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: row;
+  gap: 80px;
+}
+
+.userInput {
+  background-color: rgba(255, 255, 255, 0.2);
+  border: none;
+  width: 480px;
+  height: 56px;
+  border-radius: 12px 12px 12px 12px;
+  color: #FFFFFF;
+
+  &:focus {
+    background-color: rgba(255, 121, 0, 0.2);
+    outline: #FF7A00 1px solid;
+  }
+}
+
+.loginErrorUserInput {
+  border: none;
+  width: 480px;
+  height: 56px;
+  border-radius: 12px 12px 12px 12px;
+  background: rgba(255, 121, 121, 0.2);
+  border: 1px solid #FF7979;
+  color: #FFFFFF;
+}
+
+.loginError {
+  display: flex;
+  justify-content: center;
+  color: #FF7979;
+  font-size: 20px;
+  align-items: center;
+}
+
+.loginError img {
+  width: 23px;
+  height: 23px;
+}
+
+.userFrame {
+  display: flex;
+  width: 660px;
+  height: auto;
+  flex-direction: column;
+  justify-content: center;
+  gap: 30px;
+}
+
+.loginText {
+  display: flex;
+  justify-content: right;
+  gap: 20px;
+  align-items: center;
+}
+
+.btnWrapper {
+  width: 662px;
+  height: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.activeUserButton {
+  width: 100%;
+  height: 81px;
+  border-radius: 16px 16px 16px 16px;
+  background-color: #FF7A00;
+  border: none;
+  font-size: 24px;
+  font-weight: 500;
+  line-height: 34.75px;
+  color: #FFFFFF;
+}
+
+.inactiveUserButton {
+  width: 100%;
+  height: 81px;
+  border-radius: 16px 16px 16px 16px;
+  background-color: #BFBFBF;
+  border: none;
+  font-size: 24px;
+  font-weight: 500;
+  line-height: 34.75px;
+  color: #FFFFFF;
+}
+
+.userButton {
+  width: 100%;
+  height: 81px;
+  border-radius: 16px 16px 16px 16px;
+  background-color: #ffffff;
+  border: none;
+  font-size: 24px;
+  font-weight: 500;
+  line-height: 34.75px;
+  color: #0B0D15;
+}
+
+/* Code Editor */
+
+.topFrame {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.miniButton {
+  width: 80px;
+  height: 40px;
+  border-radius: 8px 8px 8px 8px;
+  background-color: #FFFFFF;
+  border: gray 1px solid;
+  font-size: 12px;
+  font-weight: 500;
+  text-align: center;
+}
+
+.selectBox {
+  width: 80px;
+  height: 40px;
+  border-radius: 8px 8px 8px 8px;
+  background-color: #FFFFFF;
+  border: gray 1px solid;
+  font-size: 12px;
+  font-weight: 500;
+  text-align-last: center;
+}
+
+.dropzone {
+  display: flex;
+  width: 100vw;
+  height: 10vh;
+  border: #FFFFFF 1px dashed;
+  padding: 20px;
+  color: #FFFFFF;
+  justify-content: center;
+  align-items: center;
+}
+
+/* 형상관리 */
+.dateClass {
+  color:#FFFFFF
+}
+
+.teamList {
+  display: flex;
+  width: 50vw;
+  height: auto;
+  flex-direction: row;
+  gap: 20px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.team {
+  display: flex;
+  width: 100px;
+  background: #FF7A00;
+  color: #FFFFFF;
+  justify-content: center;
+  border-radius: 8px 8px 8px 8px;
+}
+
+.scmPageFrame {
+  display: flex;
+  flex-direction: column;
+  width: 50vw;
+  gap: 20px;
+}
+
+@media (prefers-reduced-motion: no-preference) {}

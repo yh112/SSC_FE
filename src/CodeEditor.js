@@ -10,6 +10,7 @@ import UserList from "./Components/UserList";
 import Folder from "./Components/Folder";
 import DragnDrop from "./Components/DragnDrop";
 import API from "./BaseUrl";
+
 const CodeEditor = () => {
   const { lineRef, textRef, handleScrollChange } = useEditorScroll();
   const [lineCount, setLineCount] = useState(0);
@@ -268,15 +269,17 @@ const CodeEditor = () => {
   };
 
   return (
-    <div>
-      <button onClick={copyClipboard}>Code Share</button>
-      <select onChange={(e) => changeLanguage(e)}>
+    <div className="mainFrameCol">
+      <div className="topFrame">
+      <button className="miniButton" onClick={copyClipboard}>Code Share</button>
+      <select className="selectBox" onChange={(e) => changeLanguage(e)}>
         <option value="java">Java</option>
         <option value="javascript">Javascript</option>
         <option value="python">Python</option>
         <option value="c">C</option>
         <option value="cpp">C++</option>
       </select>
+      </div>
 
       <DragnDrop></DragnDrop>
 

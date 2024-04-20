@@ -1,8 +1,9 @@
 import React from 'react'
+import '../App.css';
 
-const UserButton = ({text, onClick, disabled}) => {
+const UserButton = ({text, onClick, active, disabled}) => {
   return (
-    <button className='userButton' onClick={onClick} disabled={disabled}>{text}</button>
+    <button className={ active ? 'activeUserButton' : 'inactiveUserButton'} onClick={onClick} disabled={disabled}>{text}</button>
   )
 }
 

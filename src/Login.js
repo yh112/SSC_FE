@@ -6,10 +6,11 @@ import API from "./BaseUrl";
 
 function Login() {
   const [userInfo, setUserInfo] = useState({
-    id: "",
+    userId: "",
     password: "",
   });
-  const [loginError, setLoginError] = useState(false);
+  const [loginError, setLoginError] = useState(true);
+  const [active, setActive] = useState(false);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -17,6 +18,7 @@ function Login() {
       ...userInfo,
       [name]: value,
     });
+    setActive(userInfo.userId !== "" && userInfo.password !== "");
   };
 
   const navigate = useNavigate();
@@ -26,11 +28,10 @@ function Login() {
 
   const handleLogin = () => {
     console.log(userInfo);
-    API
-      .get("/login/login", {
-        userId: String(userInfo.id),
-        password: String(userInfo.password),
-      })
+    API.get("/login/login", {
+      userId: String(userInfo.userId),
+      password: String(userInfo.password),
+    })
       .then((response) => {
         console.log(response.data);
         if (response.data === "success") {
@@ -47,22 +48,43 @@ function Login() {
   };
 
   return (
-    <div className="login">
-      <div className="loginError">
-        { loginError === true && 
-          <p>아이디 또는 비밀번호가 일치하지 않습니다.</p>}
-      </div>
+    <div className="mainFrameCol">
       <div className="userFrame" onChange={handleInputChange}>
-        <UserInput type="text" value={userInfo.id} name="id" />
-        <UserInput type="password" value={userInfo.password} name="password" />
+        {loginError === true && (
+          <div className="loginError">
+            <img src="./loginError.png"/>
+            <span>아이디 또는 비밀번호가 일치하지 않습니다.</span>
+          </div>
+        )}
+        <div className="loginText">
+          <span className="textKr">아이디</span>
+          <span className="textEn">ID</span>
+          <UserInput
+            type="text"
+            value={userInfo.userId}
+            error={loginError}
+            name="userId"
+          />
+        </div>
+        <div className="loginText">
+          <span className="textKr">비밀번호</span>
+          <span className="textEn">P/W</span>
+          <UserInput
+            type="password"
+            value={userInfo.password}
+            error={loginError}
+            name="password"
+          />
+        </div>
       </div>
       <div className="btnWrapper">
         <UserButton
           text="로그인"
           onClick={handleLogin}
-          disabled={userInfo.id === "" || userInfo.password === ""}
+          active={active}
+          disabled={userInfo.userId === "" && userInfo.password === ""}
         />
-        <button className="actionBtn" onClick={handleSignUp}>
+        <button className="userButton" onClick={handleSignUp}>
           회원가입
         </button>
       </div>

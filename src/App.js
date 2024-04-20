@@ -5,6 +5,7 @@ import Login from "./Login";
 import SignUp from "./SignUp";
 import Scm from "./ScmPage";
 import './index.css';
+import './App.css';
 
 function App() {
   return (
