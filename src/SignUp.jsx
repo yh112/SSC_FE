@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import UserInput from "./Components/UserInput";
 import BackButton from "./Components/BackButton";
 import UserButton from "./Components/UserButton";
+import InputText from "./Components/InputText";
 import API from "./BaseUrl";
 
 function SignUp() {
@@ -48,25 +48,9 @@ function SignUp() {
     <div className="mainFrameCol">
       <div className="userFrame" onChange={handleInputChange}>
         <BackButton />
-        <div className="loginText">
-          <span className="textKr">아이디</span>
-          <span className="textEn">ID</span>
-          <UserInput type="text" value={userInfo.userId} name="userId" />
-        </div>
-        <div className="loginText">
-          <span className="textKr">비밀번호</span>
-          <span className="textEn">P/W</span>
-          <UserInput
-            type="password"
-            value={userInfo.password}
-            name="password"
-          />
-        </div>
-        <div className="loginText">
-          <span className="textKr">닉네임</span>
-          <span className="textEn">Nick n</span>
-          <UserInput type="text" value={userInfo.nickname} name="nickname" />
-        </div>
+        <InputText kr="아이디" en="ID" type="text" value={userInfo.userId} name="userId" error={false} />
+        <InputText kr="비밀번호" en="P/W" type="password" value={userInfo.password} name="password" error={false} />
+        <InputText kr="닉네임" en="Nick n" type="text" value={userInfo.nickname} name="nickname" error={false} />
       </div>
       <div className="btnWrapper">
         <UserButton

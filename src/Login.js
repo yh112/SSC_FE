@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import UserInput from "./Components/UserInput";
 import UserButton from "./Components/UserButton";
+import InputText from "./Components/InputText";
 import API from "./BaseUrl";
 
 function Login() {
@@ -9,7 +10,7 @@ function Login() {
     userId: "",
     password: "",
   });
-  const [loginError, setLoginError] = useState(true);
+  const [loginError, setLoginError] = useState(false);
   const [active, setActive] = useState(false);
 
   const handleInputChange = (e) => {
@@ -50,32 +51,26 @@ function Login() {
   return (
     <div className="mainFrameCol">
       <div className="userFrame" onChange={handleInputChange}>
-        {loginError === true && (
+        {loginError && (
           <div className="loginError">
             <img src="./loginError.png"/>
             <span>아이디 또는 비밀번호가 일치하지 않습니다.</span>
           </div>
         )}
-        <div className="loginText">
-          <span className="textKr">아이디</span>
-          <span className="textEn">ID</span>
-          <UserInput
-            type="text"
-            value={userInfo.userId}
-            error={loginError}
-            name="userId"
-          />
-        </div>
-        <div className="loginText">
-          <span className="textKr">비밀번호</span>
-          <span className="textEn">P/W</span>
-          <UserInput
-            type="password"
-            value={userInfo.password}
-            error={loginError}
-            name="password"
-          />
-        </div>
+        <InputText
+          kr="아이디"
+          en="ID"
+          type="text"
+          value={userInfo.userId}
+          error={loginError}
+          name="userId"/>
+        <InputText
+          kr="비밀번호"
+          en="P/W"
+          type="password"
+          value={userInfo.password}
+          error={loginError}
+          name="password"/>
       </div>
       <div className="btnWrapper">
         <UserButton

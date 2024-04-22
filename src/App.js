@@ -4,6 +4,7 @@ import CodeEditor from "./CodeEditor";
 import Login from "./Login";
 import SignUp from "./SignUp";
 import Scm from "./ScmPage";
+import TeamPage from "./TeamPage";
 import './index.css';
 import './App.css';
 
@@ -17,6 +18,7 @@ function App() {
           <Route path="/connect" element={<Connect/>} />
           <Route path="/editor/:editorId" element={<CodeEditor/>}/>
           <Route path="/scm" element={<Scm/>} />
+          <Route path="/team" element={<TeamPage/>} />
         </Routes>
       </Router>
     </div>

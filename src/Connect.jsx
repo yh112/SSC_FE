@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import BackButton from "./Components/BackButton";
 import API from "./BaseUrl";
-import axios from "axios";
 
 const Connect = () => {
   const navigate = useNavigate();
@@ -35,22 +35,25 @@ const Connect = () => {
 
   return (
     <div className="mainFrameCol">
-      <div className="loginText">
-        <span className="textKr">코드</span>
-        <span className="textEn">Code</span>
-        <input className="userInput" onChange={inputRoomId} type="text" />
-      </div>
-      <div className="btnWrapper">
-        <button
-          className={active ? "activeUserButton" : "inactiveUserButton"}
-          disabled={roomId === ""}
-          onClick={join}
-        >
-          입장
-        </button>
-        <button className="userButton" onClick={() => connecting()}>
-          쉐어링 시작
-        </button>
+      <div className="userFrame">
+        <BackButton />
+        <div className="loginText">
+          <span className="textKr">코드</span>
+          <span className="textEn">Code</span>
+          <input className="userInput" onChange={inputRoomId} type="text" />
+        </div>
+        <div className="btnWrapper">
+          <button
+            className={active ? "activeUserButton" : "inactiveUserButton"}
+            disabled={roomId === ""}
+            onClick={join}
+          >
+            입장
+          </button>
+          <button className="userButton" onClick={() => connecting()}>
+            쉐어링 시작
+          </button>
+        </div>
       </div>
     </div>
   );

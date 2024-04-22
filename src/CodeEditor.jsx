@@ -6,7 +6,7 @@ import * as StompJs from "@stomp/stompjs";
 import "./App.css";
 import hljs from "highlight.js";
 import "highlight.js/styles/github.css";
-import UserList from "./Components/UserList";
+import List from "./Components/List";
 import Folder from "./Components/Folder";
 import DragnDrop from "./Components/DragnDrop";
 import API from "./BaseUrl";
@@ -270,7 +270,7 @@ const CodeEditor = () => {
 
   return (
     <div className="mainFrameCol">
-      <div className="topFrame">
+      <div className="topFrameBetween">
       <button className="miniButton" onClick={copyClipboard}>Code Share</button>
       <select className="selectBox" onChange={(e) => changeLanguage(e)}>
         <option value="java">Java</option>
