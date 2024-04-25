@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import List from "./Components/List";
 import Modal from "./Components/Modal";
 import API from "./BaseUrl";
@@ -7,6 +7,8 @@ import {
   VerticalTimelineElement,
 } from "react-vertical-timeline-component";
 import "react-vertical-timeline-component/style.min.css";
+import moment from "moment";
+import "moment/locale/ko";
 
 function ScmPage() {
   const teamNames = [
@@ -54,9 +56,19 @@ function ScmPage() {
 
   const [openTeamModal, setOpenTeamModal] = useState(false);
   const [active, setActive] = useState(false);
-  const [teamName, setTeamName] = useState("");
   const [newTeamName, setNewTeamName] = useState("");
+
+  const [teamName, setTeamName] = useState("");
+  const [projectName, setProjectName] = useState("");
+
   const [teamList, setTeamList] = useState([]);
+  const [userList, setUserList] = useState([]);
+  const [projectList, setProjectList] = useState([]);
+  const [commitList, setCommitList] = useState([]);
+
+  useEffect(() => {
+    getTeamList();
+  },[])
 
   // 팀 목록 조회
   async function getTeamList() {
@@ -64,6 +76,57 @@ function ScmPage() {
       const res = await API.get(`/team/list`)
 
       setTeamList(res.data);
+      setCommitList([]);
+      setUserList([]);
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
+  // 팀원 조회
+  async function getUsers(teamName) {
+    try {
+      const res = await API.get(`/team/${teamName}/users`)
+
+      setUserList(res.data);
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
+  // 팀의 프로젝트 목록 조회
+  async function getProjectList(teamName) {
+    try {
+      const res = await API.get(`/team/${teamName}/projects`)
+    
+      setProjectList(res.data);
+      setTeamName(teamName);
+      getUsers(teamName);
+      console.log(res.data);
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
+  // 프로젝트 커밋내역 조회
+  async function getCommitList(projectName) {
+    try {
+      const res = await API.get(`/manage/list/${teamName}/${projectName}`);
+
+      setCommitList(res.data);
+      setProjectName(projectName);
+
+      console.log(res.data);
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
+  // 새로운 프로젝트 생성
+  async function createProject(projectName) {
+    try {
+      const res = await API.post(`/team/${teamName}/create/${projectName}`);
+      getProjectList(teamName);
     } catch (error) {
       console.error(error)
     }
@@ -88,6 +151,19 @@ function ScmPage() {
       });
   };
 
+  const dateFormatter = (date) => {
+    const formattedDate = new Intl.DateTimeFormat('ko-KR', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: 'h23' // 24시간 형식
+    }).format(date);
+
+    return formattedDate;
+  }
+
   return (
     <>
       <Modal
@@ -109,27 +185,28 @@ function ScmPage() {
           </button>
         </div>
         <div className="scmPageFrame">
-          <List listNames={teamNames}></List>
-          {/* <ProjectList projectList={projectList}></ProjectList> */}
+          <List listNames={teamList} onClick={getProjectList}></List>
+          <List listNames={userList}></List>
+          <List listNames={projectList} onClick={getCommitList}></List>
           <VerticalTimeline className="timeline">
-            {timelineData.map((item, index) => (
+            {commitList.map((item, index) => (
               <VerticalTimelineElement
                 key={index}
-                date={item.date}
+                date={moment(item.createDate).format("YYYY-MM-DD HH:MM")}
                 dateClassName="dateClass"
                 iconStyle={{ background: "#FF7A00", color: "#000" }}
                 contentStyle={{ background: "#FF7A00", color: "#000" }}
                 contentArrowStyle={{ borderRight: `7px solid #FF7A00` }}
                 position="right"
               >
-                <h3 className="vertical-timeline-element-title">{item.team}</h3>
+                <h3 className="vertical-timeline-element-title">{teamName}</h3>
                 <h4
                   className="vertical-timeline-element-subtitle"
                   style={{ opacity: "60%" }}
                 >
-                  {item.project}
+                  {projectName}
                 </h4>
-                <p>#{item.message}</p>
+                <p>#{item.comment}</p>
               </VerticalTimelineElement>
             ))}
           </VerticalTimeline>

@@ -5,6 +5,7 @@ import UserButton from "./Components/UserButton";
 import InputText from "./Components/InputText";
 import API from "./BaseUrl";
 
+
 function Login() {
   const [userInfo, setUserInfo] = useState({
     userId: "",
@@ -29,7 +30,7 @@ function Login() {
 
   const handleLogin = () => {
     console.log(userInfo);
-    API.get("/login/login", {
+    API.post("/user/login", {
       userId: String(userInfo.userId),
       password: String(userInfo.password),
     })
