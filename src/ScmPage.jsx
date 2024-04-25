@@ -56,10 +56,18 @@ function ScmPage() {
   const [active, setActive] = useState(false);
   const [teamName, setTeamName] = useState("");
   const [newTeamName, setNewTeamName] = useState("");
+  const [teamList, setTeamList] = useState([]);
 
-  const getTeamList = () => {
-    //TODO: 팀 리스트 가져오기
-  };
+  // 팀 목록 조회
+  async function getTeamList() {
+    try {
+      const res = await API.get(`/team/list`)
+
+      setTeamList(res.data);
+    } catch (error) {
+      console.error(error)
+    }
+  }
 
   const handleInputChange = (e) => {
     const { value } = e.target;

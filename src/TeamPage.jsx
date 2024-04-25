@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import List from "./Components/List";
 import Modal from "./Components/Modal";
+import API from "./BaseUrl";
 
 function TeamPage() {
   const [openUserModal, setOpenUserModal] = useState(false);
@@ -15,6 +16,22 @@ function TeamPage() {
     "Project4",
     "Project5",
   ]);
+
+  let { teamName } = useParams();
+
+  useEffect(() => {
+    getUsers();
+  }, [])
+
+  async function getUsers() {
+    try {
+      const res = await API.get(`/team/${teamName}/users`)
+
+      setUserName(res.data);
+    } catch (error) {
+      console.error(error)
+    }
+  }
 
   const handleInputChange = (e) => {
     const { value } = e.target;
