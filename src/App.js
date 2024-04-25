@@ -5,6 +5,7 @@ import Login from "./Login";
 import SignUp from "./SignUp";
 import Scm from "./ScmPage";
 import TeamPage from "./TeamPage";
+import ProjectPage from "./ProjectPage";
 import './index.css';
 import './App.css';
 
@@ -18,7 +19,8 @@ function App() {
           <Route path="/connect" element={<Connect/>} />
           <Route path="/editor/:editorId" element={<CodeEditor/>}/>
           <Route path="/scm" element={<Scm/>} />
-          <Route path="/team" element={<TeamPage/>} />
+          <Route path="/team/:teamName" element={<TeamPage/>} />
+          <Route path="/:teamName/:projectName" element={<ProjectPage/>} />
         </Routes>
       </Router>
     </div>

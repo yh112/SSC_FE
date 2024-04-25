@@ -3,7 +3,6 @@ import { useParams, useLocation } from "react-router-dom";
 import useEditorScroll from "./useEditorScroll";
 import SockJS from "sockjs-client";
 import * as StompJs from "@stomp/stompjs";
-import "./App.css";
 import hljs from "highlight.js";
 import "highlight.js/styles/github.css";
 import List from "./Components/List";

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import List from "./Components/List";
 import Modal from "./Components/Modal";
+import API from "./BaseUrl";
 import {
   VerticalTimeline,
   VerticalTimelineElement,
@@ -54,33 +55,31 @@ function ScmPage() {
   const [openTeamModal, setOpenTeamModal] = useState(false);
   const [active, setActive] = useState(false);
   const [teamName, setTeamName] = useState("");
-  const [projectName, setProjectName] = useState("");
+  const [newTeamName, setNewTeamName] = useState("");
+
+  const getTeamList = () => {
+    //TODO: 팀 리스트 가져오기
+  };
 
   const handleInputChange = (e) => {
-    const {value} = e.target;
-    setTeamName(value);
+    const { value } = e.target;
+    setNewTeamName(value);
     setActive(value !== "");
-    console.log(teamName);
   };
 
-  const handleProjectChange = (e) => {
-    const {value} = e.target;
-    setProjectName(value);
-    setActive(value !== "");
-    console.log(projectName);
-  };
-
-  const handleAdd = (type) => {
-    return () => {
-      if (type === 0) {
-        //TODO: 서버에 추가
+  const addTeam = () => {
+    console.log(newTeamName + " 생성중");
+    API
+      .post(`/team/create/${newTeamName}`)
+      .then((res) => {
+        console.log(res);
         setOpenTeamModal(false);
-      } else {
-        //todo: 서버에 추가
-      }
-    };
+      })
+      .catch((err) => {
+        console.log(err);
+      });
   };
-  
+
   return (
     <>
       <Modal
@@ -89,14 +88,17 @@ function ScmPage() {
         addType="생성"
         kr="팀명"
         en="Team Name"
-        value={teamName}
-        name="teamName"
+        value={newTeamName}
+        name="newTeamName"
         active={active}
         onChange={handleInputChange}
+        onClick={addTeam}
       />
-      <div className="mainFrameCol" style={{gap: '20px'}}>
+      <div className="mainFrameCol" style={{ gap: "20px" }}>
         <div className="topFrameCenter">
-        <button className="clickBtn" onClick={() => setOpenTeamModal(true)}>팀 생성</button>
+          <button className="clickBtn" onClick={() => setOpenTeamModal(true)}>
+            팀 생성
+          </button>
         </div>
         <div className="scmPageFrame">
           <List listNames={teamNames}></List>
