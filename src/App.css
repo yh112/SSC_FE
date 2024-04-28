@@ -372,4 +372,12 @@ textarea {
   gap: 10px;
 }
 
+/* 프로젝트 페이지 */
+.projectPage {
+  display: flex;
+  flex-direction: row;
+  width: 100vw;
+  height: 100vh;
+  background: #0d1117;
+}
 @media (prefers-reduced-motion: no-preference) {}
