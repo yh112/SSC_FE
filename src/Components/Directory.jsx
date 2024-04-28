@@ -1,16 +1,16 @@
 import React, { useState } from "react";
-import { Menu, MenuItem, Sidebar, SubMenu } from "react-pro-sidebar";
+import { Menu, MenuItem, Sidebar, SubMenu, sidebarClasses, menuClasses } from "react-pro-sidebar";
+import { GoChevronLeft, GoChevronRight } from "react-icons/go";
 
-const Directory = ({ paths, selectedMenu, setSelectedMenu }) => {
+const Directory = ({ paths, selectedMenu, setSelectedMenu, isCollapsed, setIsCollapsed }) => {
   const [tree, setTree] = useState(buildTree(paths));
-  const [isCollapsed, setIsCollapsed] = useState(false);
   // 파일 경로를 기반으로 트리를 생성하는 함수
   function buildTree(paths) {
-    const treeData = {};
+    const treeData = {files: {}};
 
     paths.forEach((path) => {
       const pathParts = path.split("/");
-      let currentNode = treeData;
+      let currentNode = treeData.files;
 
       pathParts.forEach((part) => {
         if (!currentNode[part]) {
@@ -48,8 +48,23 @@ const Directory = ({ paths, selectedMenu, setSelectedMenu }) => {
   }
 
   return (
-    <Sidebar collapsed={isCollapsed}>
-      <Menu>{visualizeTree(tree)}</Menu>
+    <Sidebar collapsed={isCollapsed}  rootStyles={{ border: 'none',
+        [`.${sidebarClasses.container}`]: {
+          background:  "#272727",
+        },
+      }}>
+        <div onClick={() => setIsCollapsed(!isCollapsed)} style={{ cursor: "pointer", padding: "10px", color: "white" }}>{isCollapsed ? <GoChevronRight /> : <GoChevronLeft/>}</div>
+      <Menu
+      rootStyles={{
+      [`.${menuClasses.subMenuRoot}`]: {
+        background: "#272727",
+        color: "white",
+      },
+      [`.${menuClasses.menuItemRoot}`]: {
+        background: "#272727",
+        color: "white",
+      },
+    }}>{visualizeTree(tree)}</Menu>
     </Sidebar>
   );
 };

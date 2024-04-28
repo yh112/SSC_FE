@@ -185,9 +185,9 @@ function ScmPage() {
           </button>
         </div>
         <div className="scmPageFrame">
-          <List listNames={teamList} onClick={getProjectList}></List>
-          <List listNames={userList}></List>
-          <List listNames={projectList} onClick={getCommitList}></List>
+          <List className="listBtn" elementClassName="listElementBtn" listNames={teamList} onClick={getProjectList}></List>
+          <List className="listBtn" elementClassName="listElementBtn" listNames={userList}></List>
+          <List className="listBtn" elementClassName="listElementBtn" listNames={projectList} onClick={getCommitList}></List>
           <VerticalTimeline className="timeline">
             {commitList.map((item, index) => (
               <VerticalTimelineElement

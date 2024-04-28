@@ -78,8 +78,8 @@ function TeamPage() {
           <button className="clickBtn" onClick={() => setOpenProjectModal(true)}>프로젝트 추가</button>
         </div>
         <div className="scmPageFrame">
-          <List listNames={userName}></List>
-          <List listNames={projectName}></List>
+          <List className="listBtn" elementClassName="listElementBtn" listNames={userName}></List>
+          <List className="listBtn" elementClassName="listElementBtn" listNames={projectName}></List>
         </div>
       </div>
     </>

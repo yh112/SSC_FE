@@ -6,9 +6,10 @@ import * as StompJs from "@stomp/stompjs";
 import hljs from "highlight.js";
 import "highlight.js/styles/github.css";
 import List from "./Components/List";
-import Folder from "./Components/Folder";
 import DragnDrop from "./Components/DragnDrop";
 import API from "./BaseUrl";
+import Directory from "./Components/Directory";
+import Participants from "./Components/Participants";
 
 const CodeEditor = () => {
   const { lineRef, textRef, handleScrollChange } = useEditorScroll();
@@ -18,7 +19,17 @@ const CodeEditor = () => {
   const [language, setLanguage] = useState("java");
   const [start, setStart] = useState(0);
   const [end, setEnd] = useState(0);
-  const [users, setUsers] = useState([]);
+  const [users, setUsers] = useState(["이현", "준형", "규민"]);
+  const [paths, setPaths] = useState([
+    "front2/src/Component/BackButton.jsx",
+    "front2/src/Component/CloseButton.jsx",
+    "front2/src/Component/CommitList.jsx",
+    "front2/public/index.html",
+    "front2/RAEDME.md",
+    "front2/public/favicon.ico",
+  ]);
+  const [selectedMenu, setSelectedMenu] = useState("");
+  const [isCollapsed, setIsCollapsed] = useState(false);
   let leftBracketPosition = [];
   let rightBracketPosition = [];
   let enterCount = 0;
@@ -37,8 +48,7 @@ const CodeEditor = () => {
   }, []);
 
   const updateUsers = () => {
-    API
-      .post(`/editor/${editorId}`)
+    API.post(`/editor/${editorId}`)
       .then((response) => {
         console.log(response.data);
       })
@@ -268,48 +278,62 @@ const CodeEditor = () => {
   };
 
   return (
-    <div className="mainFrameCol">
-      <div className="topFrameBetween">
-      <button className="miniButton" onClick={copyClipboard}>Code Share</button>
-      <select className="selectBox" onChange={(e) => changeLanguage(e)}>
-        <option value="java">Java</option>
-        <option value="javascript">Javascript</option>
-        <option value="python">Python</option>
-        <option value="c">C</option>
-        <option value="cpp">C++</option>
-      </select>
+    <div className="mainFrameRow" style={{ gap: "0" }}>
+      <div className="col">
+        <Directory
+          paths={paths}
+          selectedMenu={selectedMenu}
+          setSelectedMenu={setSelectedMenu}
+          isCollapsed={isCollapsed}
+          setIsCollapsed={setIsCollapsed}
+        ></Directory>
+        {/* <List className="listText" elementClassName="listElementText" listNames={users} onClick='none'/> */}
+        <Participants participants={users} isCollapsed={isCollapsed} />
       </div>
-
-      <DragnDrop></DragnDrop>
-
-      {/* <UserList users={users} /> */}
-
-      <div className="code-editor">
-        <div className="code__lines" ref={lineRef}>
-          {Array.from(Array(lineCount + 1).keys())
-            .slice(1)
-            .join("\n")}
+      <div className="mainFrameCol" style={{ gap: "20px" }}>
+        <div className="topFrameBetween">
+          <button className="miniButton" onClick={copyClipboard}>
+            Code Share
+          </button>
+          {selectedMenu}
+          <select className="selectBox" onChange={(e) => changeLanguage(e)}>
+            <option value="java">Java</option>
+            <option value="javascript">Javascript</option>
+            <option value="python">Python</option>
+            <option value="c">C</option>
+            <option value="cpp">C++</option>
+          </select>
         </div>
 
-        <div>
-          <textarea
-            ref={textRef}
-            onScroll={handleScrollChange}
-            value={code}
-            onChange={(e) => changeCode(e.target.value, true)}
-            className="code-editor__textarea"
-            rows={1}
-            onKeyDown={(e) => handleKeydown(e)}
-            onInput={handleResizeHeight}
-            autoComplete="false"
-            spellCheck="false"
-          />
-          <pre className="code-editor__present">
-            <code
+        <DragnDrop></DragnDrop>
+
+        <div className="code-editor">
+          <div className="code__lines" ref={lineRef}>
+            {Array.from(Array(lineCount + 1).keys())
+              .slice(1)
+              .join("\n")}
+          </div>
+
+          <div>
+            <textarea
+              ref={textRef}
+              onScroll={handleScrollChange}
+              value={code}
+              onChange={(e) => changeCode(e.target.value, true)}
+              className="code-editor__textarea"
+              rows={1}
+              onKeyDown={(e) => handleKeydown(e)}
               onInput={handleResizeHeight}
-              dangerouslySetInnerHTML={createMarkUpCode(highlightedHTML)}
-            ></code>
-          </pre>
+              autoComplete="false"
+              spellCheck="false"
+            />
+            <pre className="code-editor__present">
+              <code
+                onInput={handleResizeHeight}
+                dangerouslySetInnerHTML={createMarkUpCode(highlightedHTML)}
+              ></code>
+            </pre>
+          </div>
         </div>
       </div>
     </div>

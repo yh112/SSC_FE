@@ -149,6 +149,17 @@ textarea {
   gap: 80px;
 }
 
+.col {
+  display: flex;
+  flex-direction: column;
+  /* gap: 20px */
+  width: fit-content;
+  height: 100vh;
+  /* overflow-x: scroll; */
+  background: #272727;
+  ;
+}
+
 .userInput {
   background-color: rgba(255, 255, 255, 0.2);
   border: none;
@@ -253,6 +264,7 @@ textarea {
   width: 100%;
   justify-content: space-between;
   align-items: center;
+  color: #FFFFFF;
 }
 
 .topFrameRight {
@@ -311,7 +323,7 @@ textarea {
   color: #FFFFFF
 }
 
-.list {
+.listBtn {
   display: flex;
   width: 50vw;
   height: auto;
@@ -321,13 +333,30 @@ textarea {
   flex-wrap: wrap;
 }
 
-.listElement {
+.listText {
+  padding-top: 10px;
+  padding-left: 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  border-top: #FFFFFF 1px solid;
+  color: #FFFFFF;
+}
+
+.listElementBtn {
   display: flex;
   width: 100px;
   background: #FF7A00;
   color: #FFFFFF;
   justify-content: center;
   border-radius: 8px 8px 8px 8px;
+}
+
+.listElementText {
+  color: #FFFFFF;
+  text-align: center;
+  /* border: #BFBFBF 1px solid; */
+  pointer-events: none;
 }
 
 .scmPageFrame {
