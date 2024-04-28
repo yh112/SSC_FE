@@ -1,6 +1,5 @@
-import React, { useState } from "react";
+import React from "react";
 import { Menu, MenuItem, Sidebar, SubMenu, sidebarClasses, menuClasses } from "react-pro-sidebar";
-import { GoChevronLeft, GoChevronRight } from "react-icons/go";
 
 const Participants = ({ participants, isCollapsed }) => {
 

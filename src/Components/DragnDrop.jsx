@@ -7,8 +7,9 @@ import React, {
 } from "react";
 import AWS from "aws-sdk";
 import API from "../BaseUrl";
+import { GoChevronUp, GoChevronDown } from "react-icons/go";
 
-const DragnDrop = () => {
+const DragnDrop = ({ isOpened, setIsOpened }) => {
   AWS.config.update({
     region: "ap-northeast-2",
     accessKeyId: process.env.REACT_APP_S3_ACCESSKEY,
@@ -96,16 +97,22 @@ const DragnDrop = () => {
   };
 
   return (
-    <div>
-      <div
-        className="dropzone"
-        id="dropzone"
-        onDragOver={handleDragOver}
-        onDrop={handleDrop}
-      >
-        Drop files here
+    <>
+      <div className="topFrameRight">
+        {isOpened ? (
+          <GoChevronUp color="white" onClick={() => setIsOpened(!isOpened)} />
+        ) : (
+          <GoChevronDown color="white" onClick={() => setIsOpened(!isOpened)} />
+        )}
       </div>
-    </div>
+      {isOpened && (
+        <div className="dropzone">
+          <div id="dropzone" onDragOver={handleDragOver} onDrop={handleDrop}>
+            Drop files here
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 

@@ -1,20 +1,17 @@
-import React from 'react'
-import API from '../BaseUrl'
+import React from "react";
+import API from "../BaseUrl";
 
 const save = () => {
-    //TODO: 서버에 저장하는 로직 필요
-    API
-    .post("/anjffhgkwl", {
-      
-    })
-}
+  //TODO: 서버에 저장하는 로직 필요
+  API.post("/anjffhgkwl", {});
+};
 
-function SaveButton() {
+function SaveButton({ onClick }) {
   return (
-    <div>
-      <button onClick={save}>Save</button>
-    </div>
-  )
+    <button className="miniButton" onClick={onClick}>
+      Save
+    </button>
+  );
 }
 
-export default SaveButton
+export default SaveButton;

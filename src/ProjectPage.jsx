@@ -4,7 +4,6 @@ import API from "./BaseUrl";
 import List from "./Components/List";
 import hljs from "highlight.js";
 import "highlight.js/styles/github-dark.css";
-import Folder from "./Components/Folder";
 import Directory from "./Components/Directory";
 import { drawSelection } from "@uiw/react-codemirror";
 
@@ -65,10 +64,11 @@ function ProjectPage() {
   }, [code]);
 
   // 선택한 메뉴가 바뀔 때마다 코드를 가져옴
-  useEffect(() => {
+  useEffect(() => {}, [selectedMenu]);
 
-  }, [selectedMenu]);
-
+  const openCodeEditor = () => {
+    //
+  };
 
   return (
     <div className="projectPage">

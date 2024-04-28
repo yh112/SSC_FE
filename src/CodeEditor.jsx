@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState, useRef } from "react";
-import { useParams, useLocation } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import useEditorScroll from "./useEditorScroll";
 import SockJS from "sockjs-client";
 import * as StompJs from "@stomp/stompjs";
@@ -10,8 +10,12 @@ import DragnDrop from "./Components/DragnDrop";
 import API from "./BaseUrl";
 import Directory from "./Components/Directory";
 import Participants from "./Components/Participants";
+import SaveButton from "./Components/SaveButton";
+import { useBeforeunload } from "react-beforeunload";
 
 const CodeEditor = () => {
+  useBeforeunload((event) => event.preventDefault());
+
   const { lineRef, textRef, handleScrollChange } = useEditorScroll();
   const [lineCount, setLineCount] = useState(0);
   const [highlightedHTML, setHighlightedCode] = useState("");
@@ -30,6 +34,7 @@ const CodeEditor = () => {
   ]);
   const [selectedMenu, setSelectedMenu] = useState("");
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isOpened, setIsOpened] = useState(true);
   let leftBracketPosition = [];
   let rightBracketPosition = [];
   let enterCount = 0;
@@ -95,10 +100,10 @@ const CodeEditor = () => {
     });
   };
 
-  const addCode = (text, start) => {
-    const value = code.substring(0, start) + text + code.substring(start);
-    setCode(value);
-  };
+  // const addCode = (text, start) => {
+  //   const value = code.substring(0, start) + text + code.substring(start);
+  //   setCode(value);
+  // };
 
   const disconnect = () => {
     client.current.deactivate();
@@ -173,6 +178,13 @@ const CodeEditor = () => {
     });
   };
 
+  // 서버에 업로드
+  const saveFile = () => {
+    // API.post(`/${teamName}/snapshots/save`).then((response) => {
+    //   console.log(response.data);
+    // });
+  };
+
   const handleKeydown = (e) => {
     const start = e.target.selectionStart;
     const end = e.target.selectionEnd;
@@ -202,7 +214,6 @@ const CodeEditor = () => {
       setEnd(end + 1);
       changeCode(value, true);
     } else if (e.key === "[") {
-      //0번째에서 대괄호 넣으면 끝으로 감(수정하기)
       e.preventDefault();
       value = code.substring(0, start) + "[]" + code.substring(end);
       textRef.value = value;
@@ -270,11 +281,8 @@ const CodeEditor = () => {
     }
   };
 
-  const location = useLocation();
-  const url = location.pathname;
-
   const copyClipboard = () => {
-    navigator.clipboard.writeText(url);
+    navigator.clipboard.writeText(editorId);
   };
 
   return (
@@ -295,6 +303,7 @@ const CodeEditor = () => {
           <button className="miniButton" onClick={copyClipboard}>
             Code Share
           </button>
+          <SaveButton onClick={saveFile} />
           {selectedMenu}
           <select className="selectBox" onChange={(e) => changeLanguage(e)}>
             <option value="java">Java</option>
@@ -305,7 +314,7 @@ const CodeEditor = () => {
           </select>
         </div>
 
-        <DragnDrop></DragnDrop>
+        <DragnDrop isOpened={isOpened} setIsOpened={setIsOpened}></DragnDrop>
 
         <div className="code-editor">
           <div className="code__lines" ref={lineRef}>

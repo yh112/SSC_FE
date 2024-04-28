@@ -8,11 +8,11 @@ const Directory = ({ paths, selectedMenu, setSelectedMenu, isCollapsed, setIsCol
   const [tree, setTree] = useState(buildTree(paths));
   // 파일 경로를 기반으로 트리를 생성하는 함수
   function buildTree(paths) {
-    const treeData = {files: {}};
+    const treeData = {Files: {}};
 
     paths.forEach((path) => {
       const pathParts = path.split("/");
-      let currentNode = treeData.files;
+      let currentNode = treeData.Files;
 
       pathParts.forEach((part) => {
         if (!currentNode[part]) {

@@ -20,7 +20,7 @@ function App() {
           <Route path="/editor/:editorId" element={<CodeEditor/>}/>
           <Route path="/scm" element={<Scm/>} />
           <Route path="/team/:teamName" element={<TeamPage/>} />
-          <Route path="/:projectName/:commitId" element={<ProjectPage/>} />
+          <Route path="/team/:teamName/project/:projectName" element={<ProjectPage/>} />
         </Routes>
       </Router>
     </div>
