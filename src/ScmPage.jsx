@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import List from "./Components/List";
 import Modal from "./Components/Modal";
 import API from "./BaseUrl";
@@ -65,6 +66,8 @@ function ScmPage() {
   const [userList, setUserList] = useState([]);
   const [projectList, setProjectList] = useState([]);
   const [commitList, setCommitList] = useState([]);
+
+  let navigate = useNavigate();
 
   useEffect(() => {
     getTeamList();
@@ -207,6 +210,7 @@ function ScmPage() {
                   {projectName}
                 </h4>
                 <p>#{item.comment}</p>
+                <button onClick={() => navigate(`/${projectName}/${item.manageId}`)}>Button</button>
               </VerticalTimelineElement>
             ))}
           </VerticalTimeline>
