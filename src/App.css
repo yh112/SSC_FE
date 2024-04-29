@@ -5,6 +5,17 @@
   min-height: 100vh;
 }
 
+.header {
+  height: 30px;
+  display: flex;
+  justify-content: flex-end;
+  background: #272727;
+  border-bottom: rgba(191, 191, 191, 0.5) 0.5px solid;
+  color: #FFFFFF;
+  gap: 10px;
+  align-items: center;
+}
+
 .code-editor {
   position: relative;
   width: 100%;
@@ -155,6 +166,7 @@ textarea {
   height: 100vh;
   /* overflow-x: scroll; */
   background: #272727;
+  border-right: rgba(191, 191, 191, 0.5) 0.5px solid;
   ;
 }
 
