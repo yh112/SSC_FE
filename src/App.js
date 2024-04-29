@@ -17,7 +17,7 @@ function App() {
           <Route path="/" element={<Login/>} />
           <Route path="/signup" element={<SignUp/>} />
           <Route path="/connect" element={<Connect/>} />
-          <Route path="/editor/:editorId" element={<CodeEditor/>}/>
+          <Route path="/editor/:teamName/:commitId" element={<CodeEditor/>}/>
           <Route path="/scm" element={<Scm/>} />
           <Route path="/team/:teamName" element={<TeamPage/>} />
           <Route path="/:teamName/:projectName/:commitId" element={<ProjectPage/>} />

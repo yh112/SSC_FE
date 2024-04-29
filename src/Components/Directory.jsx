@@ -4,7 +4,7 @@ import { GoChevronLeft, GoChevronRight, GoFileDirectoryFill, GoFile } from "reac
 import API from "../BaseUrl";
 import axios from "axios";
 
-const Directory = ({ paths, selectedMenu, setSelectedMenu, isCollapsed, setIsCollapsed, setCode }) => {
+const Directory = ({ paths, selectedMenu, setSelectedMenu, isCollapsed, setIsCollapsed, setCode, getCode }) => {
   const [tree, setTree] = useState(buildTree(paths));
   // 파일 경로를 기반으로 트리를 생성하는 함수
   function buildTree(paths) {
@@ -25,7 +25,6 @@ const Directory = ({ paths, selectedMenu, setSelectedMenu, isCollapsed, setIsCol
       // S3에 요청을 보내기 위한 파일명 저장 -> 디렉토리 제외한 파일들에만 삽입
       currentNode['path'] = path;
     });
-    console.log(treeData);
 
     return treeData;
   }
@@ -33,15 +32,6 @@ const Directory = ({ paths, selectedMenu, setSelectedMenu, isCollapsed, setIsCol
   const handleItem = (e) => {
     console.log(e.target.innerText);
     setSelectedMenu(e.target.innerText);
-  };
-
-  async function getCode(fileName) {
-    try {
-      const res = await axios.get(`https://seumu-s3-bucket.s3.ap-northeast-2.amazonaws.com/${fileName}`);
-      setCode(res.data);
-    } catch (error) {
-      console.error(error)
-    }
   };
 
   function visualizeTree(node) {

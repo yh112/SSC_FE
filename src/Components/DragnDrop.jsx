@@ -9,7 +9,7 @@ import AWS from "aws-sdk";
 import API from "../BaseUrl";
 import { GoChevronUp, GoChevronDown } from "react-icons/go";
 
-const DragnDrop = ({ isOpened, setIsOpened }) => {
+const DragnDrop = ({ isOpened, setIsOpened, teamName, setFileList }) => {
   AWS.config.update({
     region: "ap-northeast-2",
     accessKeyId: process.env.REACT_APP_S3_ACCESSKEY,
@@ -33,7 +33,6 @@ const DragnDrop = ({ isOpened, setIsOpened }) => {
     });
   };
 
-  const [fileList, setFileList] = useState([]);
   const [totalTag, setTotalTag] = useState();
 
   const traverseFileTree = async (item, path = "", formData) => {
@@ -75,11 +74,15 @@ const DragnDrop = ({ isOpened, setIsOpened }) => {
 
     async function fetchFiles() {
       try {
-        const res = await API.post("/team1/snapshots/save", formData, {
+        const res = await API.post(`/${teamName}/snapshots/save`, formData, {
           headers: {
             "Content-Type": "multipart/form-data",
           },
         });
+
+        setFileList(res.data);
+        setIsOpened(false);
+        console.log(res.data);
       } catch (error) {
         console.error(error);
       }

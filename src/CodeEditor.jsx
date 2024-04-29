@@ -25,13 +25,14 @@ const CodeEditor = () => {
   const [end, setEnd] = useState(0);
   const [users, setUsers] = useState(["이현", "준형", "규민"]);
   const [paths, setPaths] = useState([
-    "front2/src/Component/BackButton.jsx",
-    "front2/src/Component/CloseButton.jsx",
-    "front2/src/Component/CommitList.jsx",
-    "front2/public/index.html",
-    "front2/RAEDME.md",
-    "front2/public/favicon.ico",
+    // "front2/src/Component/BackButton.jsx",
+    // "front2/src/Component/CloseButton.jsx",
+    // "front2/src/Component/CommitList.jsx",
+    // "front2/public/index.html",
+    // "front2/RAEDME.md",
+    // "front2/public/favicon.ico",
   ]);
+  const [fileList, setFileList] = useState([]);
   const [selectedMenu, setSelectedMenu] = useState("");
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isOpened, setIsOpened] = useState(true);
@@ -41,7 +42,7 @@ const CodeEditor = () => {
   let tabCount = 0;
 
   const client = useRef();
-  let { editorId } = useParams();
+  let { editorId, teamName, commitId } = useParams();
 
   /**
    * Socket
@@ -49,8 +50,21 @@ const CodeEditor = () => {
   useEffect(() => {
     connect();
     //updateUsers()
+
+    if (commitId > 0) {
+
+    }
     return () => disconnect();
   }, []);
+
+  async function getCode(fileName) {
+    try {
+      const res = await API.get(`/snapshot/${teamName}?fileName=` + fileName);
+      setCode(res.data);
+    } catch (error) {
+      console.error(error)
+    }
+  };
 
   const updateUsers = () => {
     API.post(`/editor/${editorId}`)
@@ -64,14 +78,14 @@ const CodeEditor = () => {
 
   const connect = () => {
     client.current = new StompJs.Client({
-      brokerURL: "ws://3.34.52.212:8080/stomp",
+      brokerURL: "ws://localhost:8080/stomp",
       onConnect: () => {
         subscribe();
       },
     });
 
     client.current.webSocketFactory = function () {
-      return new SockJS("http://3.34.52.212:8080/stomp");
+      return new SockJS("http://localhost:8080/stomp");
     };
 
     client.current.activate();
@@ -290,13 +304,16 @@ const CodeEditor = () => {
       <Header />
       <div className="mainFrameRow" style={{ gap: "0" }}>
         <div className="col">
+        {fileList.length > 0 && (
           <Directory
-            paths={paths}
+            paths={fileList}
+            getCode={getCode}
             selectedMenu={selectedMenu}
             setSelectedMenu={setSelectedMenu}
             isCollapsed={isCollapsed}
             setIsCollapsed={setIsCollapsed}
           ></Directory>
+        )}
           {/* <List className="listText" elementClassName="listElementText" listNames={users} onClick='none'/> */}
           <Participants participants={users} isCollapsed={isCollapsed} />
         </div>
@@ -312,7 +329,12 @@ const CodeEditor = () => {
             </select>
           </div>
 
-          <DragnDrop isOpened={isOpened} setIsOpened={setIsOpened}></DragnDrop>
+          <DragnDrop
+            isOpened={isOpened}
+            setIsOpened={setIsOpened}
+            teamName={teamName}
+            setFileList={setFileList}
+          />
 
           <div className="code-editor">
             <div className="code__lines" ref={lineRef}>

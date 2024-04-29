@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import API from "./BaseUrl";
+import axios from "axios";
 import hljs from "highlight.js";
 import "highlight.js/styles/github-dark.css";
 import Directory from "./Components/Directory";
@@ -41,6 +42,15 @@ function ProjectPage() {
     }
   }
 
+  async function getCode(fileName) {
+    try {
+      const res = await axios.get(`https://seumu-s3-bucket.s3.ap-northeast-2.amazonaws.com/${fileName}`);
+      setCode(res.data);
+    } catch (error) {
+      console.error(error)
+    }
+  };
+
   // 마운트할 때 프로젝트 정보 가져오기
   useEffect(() => {
     getProject();
@@ -66,6 +76,7 @@ function ProjectPage() {
         <Directory
           paths={fileList}
           setCode={setCode}
+          getCode={getCode}
           selectedMenu={selectedMenu}
           setSelectedMenu={setSelectedMenu}
         />

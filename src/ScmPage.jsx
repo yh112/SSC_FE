@@ -210,7 +210,7 @@ function ScmPage() {
                   {projectName}
                 </h4>
                 <p>#{item.comment}</p>
-                <button onClick={() => navigate(`/${projectName}/${item.manageId}`)}>Button</button>
+                <button onClick={() => navigate(`/${teamName}/${projectName}/${item.manageId}`)}>Button</button>
               </VerticalTimelineElement>
             ))}
           </VerticalTimeline>
