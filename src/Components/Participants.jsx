@@ -1,5 +1,6 @@
 import React from "react";
 import { Menu, MenuItem, Sidebar, SubMenu, sidebarClasses, menuClasses } from "react-pro-sidebar";
+import { GoPerson } from "react-icons/go";
 
 const Participants = ({ participants, isCollapsed }) => {
 
@@ -22,7 +23,7 @@ const Participants = ({ participants, isCollapsed }) => {
     }}>
         <SubMenu label="Participants" defaultOpen="true">
         {participants.slice(0).map((participant, index) => (
-          <MenuItem key={index}>{participant}</MenuItem>
+          <MenuItem icon={<GoPerson/>} key={index}>{participant}</MenuItem>
         ))}
         </SubMenu>
     </Menu>

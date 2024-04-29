@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Menu, MenuItem, Sidebar, SubMenu, sidebarClasses, menuClasses } from "react-pro-sidebar";
-import { GoChevronLeft, GoChevronRight } from "react-icons/go";
+import { GoChevronLeft, GoChevronRight, GoFileDirectoryFill, GoFile } from "react-icons/go";
 import API from "../BaseUrl";
 import axios from "axios";
 
@@ -52,9 +52,9 @@ const Directory = ({ paths, selectedMenu, setSelectedMenu, isCollapsed, setIsCol
       return (
         <React.Fragment key={key}>
           {isDirectory ? (
-            <SubMenu label={key} defaultOpen="true">{visualizeTree(childNode)}</SubMenu>
+            <SubMenu label={key} icon={<GoFileDirectoryFill/>} defaultOpen="true">{visualizeTree(childNode)}</SubMenu>
           ) : (
-            <MenuItem active={selectedMenu === key} onClick={() => getCode(childNode['path'])}>{key}</MenuItem>
+            <MenuItem active={selectedMenu === key} icon={<GoFile/>} onClick={() => getCode(childNode['path'])}>{key}</MenuItem>
           )}
         </React.Fragment>
       );

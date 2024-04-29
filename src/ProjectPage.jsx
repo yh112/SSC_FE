@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import API from "./BaseUrl";
-import List from "./Components/List";
 import hljs from "highlight.js";
 import "highlight.js/styles/github-dark.css";
 import Directory from "./Components/Directory";
@@ -31,27 +30,16 @@ function ProjectPage() {
   //   import software.amazon.awssdk.core.waiters.WaiterResponse;
   // `);
 
-  // 메뉴 클릭 시 해당 메뉴의 경로 찾기
-  const getSnapshotId = () => {
-
-
-  };
-
-  // 메뉴의 코드 가져오기
-  const getCode = () => {
-
-  }
-
   // 프로젝트 정보 가져오기
   async function getProject() {
     try {
-      const res = await API.get(`/manage/${commitId}`)
+      const res = await API.get(`/manage/${commitId}`);
 
       setFileList(res.data);
     } catch (error) {
-      console.error(error)
+      console.error(error);
     }
-  };
+  }
 
   // 마운트할 때 프로젝트 정보 가져오기
   useEffect(() => {
@@ -66,21 +54,27 @@ function ProjectPage() {
   // 선택한 메뉴가 바뀔 때마다 코드를 가져옴
   useEffect(() => {}, [selectedMenu]);
 
+  const navigate = useNavigate();
+
   const openCodeEditor = () => {
-    //
+    navigate("/connect")
   };
 
   return (
     <div className="projectPage">
-      {fileList.length > 0 &&
+      {fileList.length > 0 && (
         <Directory
           paths={fileList}
           setCode={setCode}
           selectedMenu={selectedMenu}
           setSelectedMenu={setSelectedMenu}
-        />}
+        />
+      )}
       <div className="code-editor" style={{ height: "100%", padding: "0" }}>
-        <h4>{selectedMenu}</h4>
+        <div className="topFrameBetween">
+          <h4>{selectedMenu}</h4>
+          <button className="miniButton" style={{ background: "#FF7A00", color: "#FFFFFF"}} onClick={openCodeEditor}>Code Editor</button>
+        </div>
         <pre className="code-editor__present" style={{ padding: "0" }}>
           <code style={{ padding: "0" }}>{code}</code>
         </pre>
