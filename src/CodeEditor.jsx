@@ -70,6 +70,18 @@ const CodeEditor = () => {
     }
   };
 
+  const deleteFile = (e) => {
+    e.preventDefault();
+
+    alert("파일을 삭제하시겠습니까?");
+  }
+
+  const createFile = (e, fileName) => {
+    e.preventDefault();
+
+    alert(fileName);
+  }
+
   const updateUsers = () => {
     API.post(`/editor/${editorId}`)
       .then((response) => {
@@ -315,6 +327,8 @@ const CodeEditor = () => {
           <Directory
             paths={fileList}
             getCode={getCode}
+            createFile={createFile}
+            deleteFile={(e) => deleteFile(e)}
             selectedMenu={selectedMenu}
             setSelectedMenu={setSelectedMenu}
             isCollapsed={isCollapsed}

@@ -4,7 +4,7 @@ import { GoChevronLeft, GoChevronRight, GoFileDirectoryFill, GoFile } from "reac
 import API from "../BaseUrl";
 import axios from "axios";
 
-const Directory = ({ paths, selectedMenu, setSelectedMenu, isCollapsed, setIsCollapsed, setCode, getCode }) => {
+const Directory = ({ paths, selectedMenu, setSelectedMenu, isCollapsed, setIsCollapsed, setCode, getCode, deleteFile, createFile }) => {
   const [tree, setTree] = useState(buildTree(paths));
   // 파일 경로를 기반으로 트리를 생성하는 함수
   function buildTree(paths) {
@@ -34,17 +34,35 @@ const Directory = ({ paths, selectedMenu, setSelectedMenu, isCollapsed, setIsCol
     setSelectedMenu(e.target.innerText);
   };
 
-  function visualizeTree(node) {
+  function visualizeTree(node, fullPath = "") {
     return Object.keys(node).map((key) => {
       const childNode = node[key];
       const isDirectory = !Object.keys(childNode).includes('path');
+      
+      if(isDirectory && key != "Files") {
+        if(fullPath.length === 0) {
+          fullPath = key;
+        }
+        else {
+          fullPath = fullPath + "/" + key;
+        } 
+      }
 
       return (
         <React.Fragment key={key}>
-          {isDirectory ? (
-            <SubMenu label={key} icon={<GoFileDirectoryFill/>} defaultOpen="true">{visualizeTree(childNode)}</SubMenu>
+          {isDirectory ? fullPath.length === 0 ? visualizeTree(childNode, fullPath) : (
+            <SubMenu 
+            label={key} 
+            icon={<GoFileDirectoryFill/>} 
+            defaultOpen="true"
+            onContextMenu={(e) => createFile(e, fullPath)}
+            >{visualizeTree(childNode, fullPath)}</SubMenu>
           ) : (
-            <MenuItem active={selectedMenu === key} icon={<GoFile/>} onClick={() => getCode(childNode['path'])}>{key}</MenuItem>
+            <MenuItem 
+            active={selectedMenu === key} 
+            icon={<GoFile/>} 
+            onClick={() => getCode(childNode['path'])}
+            onContextMenu={(e) => deleteFile(e)}>{key}</MenuItem>
           )}
         </React.Fragment>
       );
