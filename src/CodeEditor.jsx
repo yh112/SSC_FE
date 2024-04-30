@@ -33,6 +33,7 @@ const CodeEditor = () => {
     // "front2/public/favicon.ico",
   ]);
   const [fileList, setFileList] = useState([]);
+  const [fileName, setFileName] = useState("");
   const [selectedMenu, setSelectedMenu] = useState("");
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isOpened, setIsOpened] = useState(true);
@@ -60,7 +61,10 @@ const CodeEditor = () => {
   async function getCode(fileName) {
     try {
       const res = await API.get(`/snapshot/${teamName}?fileName=` + fileName);
+
       setCode(res.data);
+      setFileName(fileName);
+      subscribe(fileName);
     } catch (error) {
       console.error(error)
     }
@@ -97,16 +101,19 @@ const CodeEditor = () => {
     client.current.publish({
       destination: "/app/message",
       body: JSON.stringify({
-        roomId: editorId,
+        teamName: teamName,
         code: inputCode,
         line: lineCount,
+        fileName: fileName
       }),
     });
   };
 
-  const subscribe = () => {
+  const subscribe = (fileName) => {
     console.log("subscribe: " + client.current.connected);
-    client.current.subscribe(`/subscribe/notice/${editorId}`, (body) => {
+    console.log(teamName);
+
+    client.current.subscribe(`/subscribe/notice/${teamName}/${fileName}`, (body) => {
       const json_body = JSON.parse(body.body);
       console.log(json_body);
       changeCode(json_body.code, false);
@@ -175,7 +182,7 @@ const CodeEditor = () => {
 
   const changeCode = (inputCode, myState) => {
     if (myState) {
-      console.log(inputCode);
+      //console.log(inputCode);
       setCode(inputCode);
       publish(inputCode);
     } else {
