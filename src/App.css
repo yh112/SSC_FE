@@ -325,9 +325,20 @@ textarea {
   border: #FFFFFF 1px dashed;
   padding: 10px;
   color: #FFFFFF;
-  justify-content: center;
+  justify-content: end;
   align-items: center;
 }
+
+.addFile {
+  background: #272727;
+  display: flex;
+  justify-content: center;
+}
+.fileNameInput {
+  background: #717171;
+  border: none;
+}
+
 
 /* 형상관리 */
 .dateClass {

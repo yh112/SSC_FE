@@ -25,12 +25,12 @@ const CodeEditor = () => {
   const [end, setEnd] = useState(0);
   const [users, setUsers] = useState(["이현", "준형", "규민"]);
   const [paths, setPaths] = useState([
-    // "front2/src/Component/BackButton.jsx",
-    // "front2/src/Component/CloseButton.jsx",
-    // "front2/src/Component/CommitList.jsx",
-    // "front2/public/index.html",
-    // "front2/RAEDME.md",
-    // "front2/public/favicon.ico",
+    "front2/src/Component/BackButton.jsx",
+    "front2/src/Component/CloseButton.jsx",
+    "front2/src/Component/CommitList.jsx",
+    "front2/public/index.html",
+    "front2/RAEDME.md",
+    "front2/public/favicon.ico",
   ]);
   const [fileList, setFileList] = useState([]);
   const [fileName, setFileName] = useState("");
@@ -77,9 +77,7 @@ const CodeEditor = () => {
     alert("파일을 삭제하시겠습니까?");
   }
 
-  const createFile = (e, fileName) => {
-    e.preventDefault();
-
+  const createFile = (fileName) => {
     alert(fileName);
   }
 
@@ -324,9 +322,10 @@ const CodeEditor = () => {
       <Header />
       <div className="mainFrameRow" style={{ gap: "0" }}>
         <div className="col">
-        {fileList.length > 0 && (
+        {paths.length > 0 && (
           <Directory
-            paths={fileList}
+            // paths={fileList}
+            paths={paths}
             getCode={getCode}
             createFile={createFile}
             deleteFile={(e) => deleteFile(e)}
