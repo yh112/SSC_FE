@@ -109,10 +109,12 @@ const DragnDrop = ({ isOpened, setIsOpened, teamName, setFileList }) => {
         )}
       </div>
       {isOpened && (
-        <div className="dropzone">
-          <div id="dropzone" onDragOver={handleDragOver} onDrop={handleDrop}>
-            Drop files here
-          </div>
+        <div
+          className="dropzone"
+          onDragOver={handleDragOver}
+          onDrop={handleDrop}
+        >
+          Drop files here
         </div>
       )}
     </>
