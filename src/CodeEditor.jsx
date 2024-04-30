@@ -72,7 +72,8 @@ const CodeEditor = () => {
 
   const deleteFile = (e) => {
     e.preventDefault();
-
+    e.stopPropagation();
+    
     alert("파일을 삭제하시겠습니까?");
   }
 

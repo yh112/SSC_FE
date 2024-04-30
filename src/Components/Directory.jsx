@@ -1,11 +1,15 @@
 import React, { useState } from "react";
 import { Menu, MenuItem, Sidebar, SubMenu, sidebarClasses, menuClasses } from "react-pro-sidebar";
-import { GoChevronLeft, GoChevronRight, GoFileDirectoryFill, GoFile } from "react-icons/go";
+import { GoChevronLeft, GoChevronRight, GoFileDirectoryFill, GoFile, GoPlus, GoTrash } from "react-icons/go";
 import API from "../BaseUrl";
 import axios from "axios";
 
 const Directory = ({ paths, selectedMenu, setSelectedMenu, isCollapsed, setIsCollapsed, setCode, getCode, deleteFile, createFile }) => {
+  const [addState, setAddState] = useState({});
   const [tree, setTree] = useState(buildTree(paths));
+  const [isFileAddOpened, setIsFileAddOpened] = useState(false);
+  const [isFileDeleteOpened, setIsFileDeleteOpened] = useState(false);
+
   // 파일 경로를 기반으로 트리를 생성하는 함수
   function buildTree(paths) {
     const treeData = {Files: {}};
@@ -18,6 +22,7 @@ const Directory = ({ paths, selectedMenu, setSelectedMenu, isCollapsed, setIsCol
         if (!currentNode[part]) {
           currentNode[part] = {};
         }
+        
         currentNode = currentNode[part];
         
       });
@@ -34,6 +39,8 @@ const Directory = ({ paths, selectedMenu, setSelectedMenu, isCollapsed, setIsCol
     setSelectedMenu(e.target.innerText);
   };
 
+  let state = {};
+
   function visualizeTree(node, fullPath = "") {
     return Object.keys(node).map((key) => {
       const childNode = node[key];
@@ -48,6 +55,7 @@ const Directory = ({ paths, selectedMenu, setSelectedMenu, isCollapsed, setIsCol
         } 
       }
 
+
       return (
         <React.Fragment key={key}>
           {isDirectory ? fullPath.length === 0 ? visualizeTree(childNode, fullPath) : (
@@ -55,14 +63,23 @@ const Directory = ({ paths, selectedMenu, setSelectedMenu, isCollapsed, setIsCol
             label={key} 
             icon={<GoFileDirectoryFill/>} 
             defaultOpen="true"
-            onContextMenu={(e) => createFile(e, fullPath)}
-            >{visualizeTree(childNode, fullPath)}</SubMenu>
+            suffix={<GoPlus onClick={(e) => {
+              e.stopPropagation();
+              
+              // setAddState({
+              //   ...addState,
+              //   [fullPath]: true
+              // })
+              //setIsFileAddOpened(!isFileAddOpened);
+            }}/>}
+            >{addState[key] &&(<input type=""/>)}{visualizeTree(childNode, fullPath)}</SubMenu>
           ) : (
             <MenuItem 
             active={selectedMenu === key} 
             icon={<GoFile/>} 
+            suffix={<GoTrash onClick={deleteFile}/>}
             onClick={() => getCode(childNode['path'])}
-            onContextMenu={(e) => deleteFile(e)}>{key}</MenuItem>
+            >{key}</MenuItem>
           )}
         </React.Fragment>
       );
