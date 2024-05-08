@@ -21,6 +21,7 @@ const CodeEditor = () => {
   const [highlightedHTML, setHighlightedCode] = useState("");
   const [code, setCode] = useState("");
   const [language, setLanguage] = useState("java");
+  const [codeArray, setCodeArray] = useState([]);
   const [start, setStart] = useState(0);
   const [end, setEnd] = useState(0);
   const [users, setUsers] = useState(["이현", "준형", "규민"]);
@@ -37,6 +38,7 @@ const CodeEditor = () => {
   const [selectedMenu, setSelectedMenu] = useState("");
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isOpened, setIsOpened] = useState(true);
+  let currentString = "";
   let leftBracketPosition = [];
   let rightBracketPosition = [];
   let enterCount = 0;
@@ -53,7 +55,6 @@ const CodeEditor = () => {
     //updateUsers()
 
     if (commitId > 0) {
-
     }
     return () => disconnect();
   }, []);
@@ -66,20 +67,20 @@ const CodeEditor = () => {
       setFileName(fileName);
       subscribe(fileName);
     } catch (error) {
-      console.error(error)
+      console.error(error);
     }
-  };
+  }
 
   const deleteFile = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
     alert("파일을 삭제하시겠습니까?");
-  }
+  };
 
   const createFile = (fileName) => {
     alert(fileName);
-  }
+  };
 
   const updateUsers = () => {
     API.post(`/editor/${editorId}`)
@@ -115,7 +116,7 @@ const CodeEditor = () => {
         teamName: teamName,
         code: inputCode,
         line: lineCount,
-        fileName: fileName
+        fileName: fileName,
       }),
     });
   };
@@ -124,12 +125,15 @@ const CodeEditor = () => {
     console.log("subscribe: " + client.current.connected);
     console.log(teamName);
 
-    client.current.subscribe(`/subscribe/notice/${teamName}/${fileName}`, (body) => {
-      const json_body = JSON.parse(body.body);
-      console.log(json_body);
-      changeCode(json_body.code, false);
-      //setUsers(json_body.userList);
-    });
+    client.current.subscribe(
+      `/subscribe/notice/${teamName}/${fileName}`,
+      (body) => {
+        const json_body = JSON.parse(body.body);
+        console.log(json_body);
+        changeCode(json_body.code, false);
+        //setUsers(json_body.userList);
+      }
+    );
   };
 
   // const addCode = (text, start) => {
@@ -217,99 +221,147 @@ const CodeEditor = () => {
     // });
   };
 
-  const handleKeydown = (e) => {
-    const start = e.target.selectionStart;
-    const end = e.target.selectionEnd;
-    let value;
-    //updateCode(e.key);
-    setStart(start);
-    setEnd(end);
+  const convertCode = () => {};
 
-    if (e.key === "Tab") {
-      e.preventDefault();
-      value = code.substring(0, start) + "\t" + code.substring(end);
-      textRef.value = value;
-      setStart(start + 1);
-      setEnd(end + 1);
-      changeCode(value, true);
-    } else if (e.key === "{") {
-      e.preventDefault();
-      value = code.substring(0, start) + "{}" + code.substring(end);
-      setStart(start + 1);
-      changeCode(value, true);
-      setEnd(end + 1);
-    } else if (e.key === "(") {
-      e.preventDefault();
-      value = code.substring(0, start) + "()" + code.substring(end);
-      textRef.value = value;
-      setStart(start + 1);
-      setEnd(end + 1);
-      changeCode(value, true);
-    } else if (e.key === "[") {
-      e.preventDefault();
-      value = code.substring(0, start) + "[]" + code.substring(end);
-      textRef.value = value;
-      setStart(start + 1);
-      setEnd(end + 1);
-      changeCode(value, true);
-    } else if (e.key === "'") {
-      e.preventDefault();
-      value = code.substring(0, start) + "''" + code.substring(end);
-      textRef.value = value;
-      setStart(start + 1);
-      setEnd(end + 1);
-      changeCode(value, true);
-    } else if (e.key === '"') {
-      e.preventDefault();
-      value = code.substring(0, start) + '""' + code.substring(end);
-      textRef.value = value;
-      setStart(start + 1);
-      setEnd(end + 1);
-      changeCode(value, true);
-    } else if (e.key === "Enter") {
-      e.preventDefault();
-      findBracket();
-      if (leftBracketPosition.length > 0) {
-        for (let i = 0; i < leftBracketPosition.length; i++) {
-          if (start > leftBracketPosition[i]) {
-            tabCount++;
-          }
-          if (start > rightBracketPosition[i]) {
-            tabCount--;
-          }
-          if (start === Number(rightBracketPosition[i])) {
-            enterCount++;
-          }
-        }
-      }
+  // const handleKeydown = (e) => {
+  //   const start = e.target.selectionStart;
+  //   const end = e.target.selectionEnd;
+  //   let value;
+  //   //updateCode(e.key);
+  //   setStart(start);
+  //   setEnd(end);
 
-      if (tabCount === 0) {
-        //그냥 엔터
-        value = code.substring(0, start) + "\n" + code.substring(start);
-        textRef.value = value;
-      } else if (tabCount > 0 && enterCount > 0) {
-        //바로 뒤에 닫힌 대괄호가 있을 때
-        value =
-          code.substring(0, start) +
-          "\n" +
-          "\t".repeat(tabCount) +
-          "\n" +
-          "\t".repeat(tabCount - 1) +
-          code.substring(start);
-        textRef.value = value;
-        changeCode(value, true);
-      } else {
-        //대괄호 있을 때
-        value =
-          code.substring(0, start) +
-          "\n" +
-          "\t".repeat(tabCount) +
-          code.substring(start);
-        textRef.value = value;
-      }
-      changeCode(value, true);
-      setStart(start + tabCount + 1);
-      setEnd(end + tabCount + 1);
+  //   if (e.key === "Tab") {
+  //   e.preventDefault();
+  //     value = code.substring(0, start) + "\t" + code.substring(end);
+  //     textRef.value = value;
+  //     setStart(start + 1);
+  //     setEnd(end + 1);
+  //     changeCode(value, true);
+  //   } else if (e.key === "{") {
+  //   e.preventDefault();
+  //     value = code.substring(0, start) + "{}" + code.substring(end);
+  //     setStart(start + 1);
+  //     changeCode(value, true);
+  //     setEnd(end + 1);
+  //   } else if (e.key === "(") {
+  //   e.preventDefault();
+  //     value = code.substring(0, start) + "()" + code.substring(end);
+  //     textRef.value = value;
+  //     setStart(start + 1);
+  //     setEnd(end + 1);
+  //     changeCode(value, true);
+  //   } else if (e.key === "[") {
+  //   e.preventDefault();
+  //     value = code.substring(0, start) + "[]" + code.substring(end);
+  //     textRef.value = value;
+  //     setStart(start + 1);
+  //     setEnd(end + 1);
+  //     changeCode(value, true);
+  //   } else if (e.key === "'") {
+  //   e.preventDefault();
+  //     value = code.substring(0, start) + "''" + code.substring(end);
+  //     textRef.value = value;
+  //     setStart(start + 1);
+  //     setEnd(end + 1);
+  //     changeCode(value, true);
+  //   } else if (e.key === '"') {
+  //   e.preventDefault();
+  //     value = code.substring(0, start) + '""' + code.substring(end);
+  //     textRef.value = value;
+  //     setStart(start + 1);
+  //     setEnd(end + 1);
+  //     changeCode(value, true);
+  //   } else if (e.key === "Enter") {
+  //   e.preventDefault();
+  //     // findBracket();
+  //     // if (leftBracketPosition.length > 0) {
+  //     //   for (let i = 0; i < leftBracketPosition.length; i++) {
+  //     //     if (start > leftBracketPosition[i]) {
+  //     //       tabCount++;
+  //     //     }
+  //     //     if (start > rightBracketPosition[i]) {
+  //     //       tabCount--;
+  //     //     }
+  //     //     if (start === Number(rightBracketPosition[i])) {
+  //     //       enterCount++;
+  //     //     }
+  //     //   }
+  //     // }
+
+  //     // if (tabCount === 0) {
+  //     //   //그냥 엔터
+  //     //   value = code.substring(0, start) + "\n" + code.substring(start);
+  //     //   textRef.value = value;
+  //     // } else if (tabCount > 0 && enterCount > 0) {
+  //     //   //바로 뒤에 닫힌 대괄호가 있을 때
+  //     //   value =
+  //     //     code.substring(0, start) +
+  //     //     "\n" +
+  //     //     "\t".repeat(tabCount) +
+  //     //     "\n" +
+  //     //     "\t".repeat(tabCount - 1) +
+  //     //     code.substring(start);
+  //     //   textRef.value = value;
+  //     //   changeCode(value, true);
+  //     // } else {
+  //     //   //대괄호 있을 때
+  //     //   value =
+  //     //     code.substring(0, start) +
+  //     //     "\n" +
+  //     //     "\t".repeat(tabCount) +
+  //     //     code.substring(start);
+  //     //   textRef.value = value;
+  //     // }
+  //     // changeCode(value, true);
+  //     // setStart(start + tabCount + 1);
+  //     // setEnd(end + tabCount + 1);
+  //   }
+  // };
+
+  const handleKeydown = (e, lineCount) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      // 엔터 키가 입력된 경우
+      setCodeArray((prevCodeArray) => {
+        const updatedCodeArray = [...prevCodeArray];
+        updatedCodeArray.push("");
+        return updatedCodeArray;
+      });
+      console.log(codeArray);
+    } else if (e.key === "Backspace") {
+      e.preventDefault();
+      // 백스페이스 키가 입력된 경우
+      setCodeArray((prevCodeArray) => {
+        const updatedCodeArray = [...prevCodeArray];
+        const currentLine = updatedCodeArray[lineCount] || "";
+        updatedCodeArray[lineCount] = currentLine.slice(0, -1);
+        return updatedCodeArray;
+      });
+    } else if (
+      e.key === "Shift" ||
+      e.key === "Control" ||
+      e.key === "Tap" ||
+      e.key === "Alt" ||
+      e.key === "Command" ||
+      e.key === "ArrowDown" ||
+      e.key === "ArrowUp" ||
+      e.key === "ArrowLeft" ||
+      e.key === "ArrowRight" ||
+      e.key === "F12"
+    ) {
+      // 특수 키가 입력된 경우
+      return;
+    } else {
+      e.preventDefault();
+      // 유효한 입력이 입력된 경우
+      setCodeArray((prevCodeArray) => {
+        const updatedCodeArray = [...prevCodeArray];
+        const currentLine = updatedCodeArray[lineCount] || "";
+        updatedCodeArray[lineCount] = currentLine + e.key;
+        return updatedCodeArray;
+      });
+      console.log(codeArray);
     }
   };
 
@@ -322,19 +374,19 @@ const CodeEditor = () => {
       <Header />
       <div className="mainFrameRow" style={{ gap: "0" }}>
         <div className="col">
-        {paths.length > 0 && (
-          <Directory
-            // paths={fileList}
-            paths={paths}
-            getCode={getCode}
-            createFile={createFile}
-            deleteFile={(e) => deleteFile(e)}
-            selectedMenu={selectedMenu}
-            setSelectedMenu={setSelectedMenu}
-            isCollapsed={isCollapsed}
-            setIsCollapsed={setIsCollapsed}
-          ></Directory>
-        )}
+          {paths.length > 0 && (
+            <Directory
+              // paths={fileList}
+              paths={paths}
+              getCode={getCode}
+              createFile={createFile}
+              deleteFile={(e) => deleteFile(e)}
+              selectedMenu={selectedMenu}
+              setSelectedMenu={setSelectedMenu}
+              isCollapsed={isCollapsed}
+              setIsCollapsed={setIsCollapsed}
+            ></Directory>
+          )}
           {/* <List className="listText" elementClassName="listElementText" listNames={users} onClick='none'/> */}
           <Participants participants={users} isCollapsed={isCollapsed} />
         </div>
@@ -358,11 +410,11 @@ const CodeEditor = () => {
           />
 
           <div className="code-editor">
-            <div className="code__lines" ref={lineRef}>
+            {/* <div className="code__lines" ref={lineRef}>
               {Array.from(Array(lineCount + 1).keys())
                 .slice(1)
                 .join("\n")}
-            </div>
+            </div> */}
 
             <div>
               <textarea
@@ -372,17 +424,30 @@ const CodeEditor = () => {
                 onChange={(e) => changeCode(e.target.value, true)}
                 className="code-editor__textarea"
                 rows={1}
-                onKeyDown={(e) => handleKeydown(e)}
+                onKeyDown={(e) => handleKeydown(e, lineCount)}
                 onInput={handleResizeHeight}
                 autoComplete="false"
                 spellCheck="false"
               />
-              <pre className="code-editor__present">
-                <code
+              {/* <pre className="code-editor__present"> */}
+              {/* <code
                   onInput={handleResizeHeight}
                   dangerouslySetInnerHTML={createMarkUpCode(highlightedHTML)}
-                ></code>
-              </pre>
+                ></code> */}
+
+              <code
+                className="code-editor__present"
+                onInput={handleResizeHeight}
+              >
+                {codeArray.slice(0).map((line, index) => (
+                  <div>
+                    {/* <span>{index}</span> */}
+                    <span style={{ marginRight: "10px" }}>{index + 1}</span>
+                    <span>{line}</span>
+                  </div>
+                ))}
+              </code>
+              {/* </pre> */}
             </div>
           </div>
         </div>
