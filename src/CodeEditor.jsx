@@ -21,7 +21,7 @@ const CodeEditor = () => {
   const [highlightedHTML, setHighlightedCode] = useState("");
   const [code, setCode] = useState("");
   const [language, setLanguage] = useState("java");
-  const [codeArray, setCodeArray] = useState([]);
+  const [codeArray, setCodeArray] = useState([""]);
   const [start, setStart] = useState(0);
   const [end, setEnd] = useState(0);
   const [users, setUsers] = useState(["이현", "준형", "규민"]);
@@ -149,26 +149,38 @@ const CodeEditor = () => {
     textRef.current?.focus();
   }, []);
 
-  useEffect(() => {
-    setLineCount(code.split("\n").length);
-    // publish();
-  }, [code]);
+  // useEffect(() => {
+  //   setLineCount(code.split("\n").length);
+  //   // publish();
+  // }, [code]);
 
-  const findBracket = () => {
-    console.log(code);
+  // useEffect(() => {
+  //   setLineCount(codeArray.split("\n").length);
+  // }, [codeArray]);
+
+  const findBracket = (lineCount) => {
+    // console.log(code);
     leftBracketPosition = [];
     rightBracketPosition = [];
     const rightExp = /\}/g;
     const leftExp = /\{/g;
     let leftPos, rightPos;
-    while (
-      (leftPos = leftExp.exec(code)) !== null &&
-      (rightPos = rightExp.exec(code)) !== null
-    ) {
-      console.log(leftPos.index);
-      console.log(rightPos.index);
-      leftBracketPosition.push(leftPos.index);
-      rightBracketPosition.push(rightPos.index);
+    for (let i = 0; i < lineCount + 1; i++) {
+      leftExp.lastIndex = 0;
+      rightExp.lastIndex = 0;
+      while (
+        (leftPos = leftExp.exec(codeArray[i])) !== null &&
+        (rightPos = rightExp.exec(codeArray[i])) !== null
+      ) {
+        console.log("line: " + i);
+        leftBracketPosition.push({
+          line: i,
+          pos: leftPos.index,
+        });
+        rightBracketPosition.push({ line: i, pos: rightPos.index });
+        leftExp.lastIndex = leftPos.index + 1;
+        rightExp.lastIndex = rightPos.index + 1;
+      }
     }
     console.log(leftBracketPosition, rightBracketPosition);
   };
@@ -319,13 +331,52 @@ const CodeEditor = () => {
   //   }
   // };
 
-  const handleKeydown = (e, lineCount) => {
+  const handleKeydown = (e) => {
     if (e.key === "Enter") {
       e.preventDefault();
       // 엔터 키가 입력된 경우
+      findBracket(lineCount);
+      if (leftBracketPosition.length > 0) {
+        for (let i = 0; i < leftBracketPosition.length; i++) {
+          if (lineCount > leftBracketPosition[i].line) {
+            tabCount++;
+          }
+          if (lineCount > rightBracketPosition[i].line) {
+            tabCount--;
+          }
+          if (lineCount === Number(rightBracketPosition[i]).line) {
+            enterCount++;
+          }
+        }
+        console.log(tabCount, enterCount);
+      }
+      if(tabCount === 0) {
+        setLineCount(lineCount + 1);
       setCodeArray((prevCodeArray) => {
         const updatedCodeArray = [...prevCodeArray];
-        updatedCodeArray.push("");
+        updatedCodeArray[lineCount + 1] = ""; //다음 줄 추가
+        return updatedCodeArray;
+      });
+      } else if (tabCount > 0 && enterCount > 0) {
+        setLineCount(lineCount + 1);
+        setCodeArray((prevCodeArray) => {
+          const updatedCodeArray = [...prevCodeArray];
+          updatedCodeArray[lineCount + 1] = "\t".repeat(tabCount) + "\n" + "\t".repeat(tabCount - 1);
+          return updatedCodeArray;
+        });
+      } else {
+        setLineCount(lineCount + 1);
+        setCodeArray((prevCodeArray) => {
+          const updatedCodeArray = [...prevCodeArray];
+          updatedCodeArray[lineCount + 1] = "\t".repeat(tabCount);
+          return updatedCodeArray;
+        });
+      }
+
+      setLineCount(lineCount + 1);
+      setCodeArray((prevCodeArray) => {
+        const updatedCodeArray = [...prevCodeArray];
+        updatedCodeArray[lineCount + 1] = ""; //다음 줄 추가
         return updatedCodeArray;
       });
       console.log(codeArray);
@@ -338,28 +389,48 @@ const CodeEditor = () => {
         updatedCodeArray[lineCount] = currentLine.slice(0, -1);
         return updatedCodeArray;
       });
+    } else if (e.key === "Tab") {
+      e.preventDefault();
+      // 탭 키가 입력된 경우
+      setCodeArray((prevCodeArray) => {
+        const updatedCodeArray = [...prevCodeArray];
+        const currentLine = updatedCodeArray[lineCount] || "";
+        updatedCodeArray[lineCount] = currentLine + "  ";
+        return updatedCodeArray;
+      });
+    } else if (e.key === "{") {
+      e.preventDefault();
+      setCodeArray((prevCodeArray) => {
+        const updatedCodeArray = [...prevCodeArray];
+        const currentLine = updatedCodeArray[lineCount] || "";
+        updatedCodeArray[lineCount] = currentLine + "{}";
+        return updatedCodeArray;
+      });
     } else if (
       e.key === "Shift" ||
       e.key === "Control" ||
-      e.key === "Tap" ||
       e.key === "Alt" ||
       e.key === "Command" ||
       e.key === "ArrowDown" ||
       e.key === "ArrowUp" ||
       e.key === "ArrowLeft" ||
       e.key === "ArrowRight" ||
-      e.key === "F12"
+      e.key === "F12" ||
+      e.key === "Meta"
     ) {
+      e.preventDefault();
       // 특수 키가 입력된 경우
       return;
     } else {
       e.preventDefault();
       // 유효한 입력이 입력된 경우
       setCodeArray((prevCodeArray) => {
-        const updatedCodeArray = [...prevCodeArray];
-        const currentLine = updatedCodeArray[lineCount] || "";
-        updatedCodeArray[lineCount] = currentLine + e.key;
-        return updatedCodeArray;
+        // 기존 배열이 undefined인 경우
+        console.log(prevCodeArray);
+        const updatedCodeArray = [...prevCodeArray]; // 기존 배열 복사
+        const currentLine = updatedCodeArray[lineCount] || ""; // 현재 라인 확인
+        updatedCodeArray[lineCount] = currentLine + e.key; // 현재 라인에 새로운 키 추가
+        return updatedCodeArray; // 업데이트된 배열 반환
       });
       console.log(codeArray);
     }
@@ -420,15 +491,29 @@ const CodeEditor = () => {
               <textarea
                 ref={textRef}
                 onScroll={handleScrollChange}
-                value={code}
+                value={codeArray.join("\n")}
                 onChange={(e) => changeCode(e.target.value, true)}
                 className="code-editor__textarea"
-                rows={1}
-                onKeyDown={(e) => handleKeydown(e, lineCount)}
+                // rows={1}
+                onKeyDown={(e) => handleKeydown(e)}
                 onInput={handleResizeHeight}
                 autoComplete="false"
                 spellCheck="false"
               />
+              {/* {codeArray.map((line, index) => (
+                <input
+                  type="text"
+                  value={line}
+                  ref={textRef}
+                  onScroll={handleScrollChange}
+                  onChange={(e) => changeCode(e.target.value, true)}
+                  className="code-editor__textarea"
+                  rows={1}
+                  onKeyDown={(e) => handleKeydown(e, lineCount)}
+                  // onInput={handleResizeHeight}
+                >
+                </input>
+              ))} */}
               {/* <pre className="code-editor__present"> */}
               {/* <code
                   onInput={handleResizeHeight}
