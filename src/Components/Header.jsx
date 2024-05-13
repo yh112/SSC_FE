@@ -1,5 +1,6 @@
 import React from 'react'
 import { GoUpload, GoX, GoPersonAdd } from "react-icons/go";
+import { BsFillPlayCircleFill } from "react-icons/bs";
 import API from '../BaseUrl';
 
 function Header({teamName, projectName, comment}) {
@@ -20,7 +21,7 @@ function Header({teamName, projectName, comment}) {
 
   return (
     <div className="header">
-      <GoUpload onClick={() => uploadToS3()}/><GoPersonAdd/><GoX/>
+      <BsFillPlayCircleFill/><GoUpload onClick={() => uploadToS3()}/><GoPersonAdd/><GoX/>
     </div>
   )
 }

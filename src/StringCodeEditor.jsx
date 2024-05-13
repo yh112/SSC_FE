@@ -21,17 +21,17 @@ const CodeEditor = () => {
   const [highlightedHTML, setHighlightedCode] = useState("");
   const [code, setCode] = useState("");
   const [language, setLanguage] = useState("java");
-  const [start, setStart] = useState(0);
-  const [end, setEnd] = useState(0);
+  const [cursorStart, setCursorStart] = useState(0);
+  const [cursorEnd, setCursorEnd] = useState(0);
   const [users, setUsers] = useState(["이현", "준형", "규민"]);
-  const [paths, setPaths] = useState([
-    "front2/src/Component/BackButton.jsx",
-    "front2/src/Component/CloseButton.jsx",
-    "front2/src/Component/CommitList.jsx",
-    "front2/public/index.html",
-    "front2/RAEDME.md",
-    "front2/public/favicon.ico",
-  ]);
+  // const [paths, setPaths] = useState([
+  //   "front2/src/Component/BackButton.jsx",
+  //   "front2/src/Component/CloseButton.jsx",
+  //   "front2/src/Component/CommitList.jsx",
+  //   "front2/public/index.html",
+  //   "front2/RAEDME.md",
+  //   "front2/public/favicon.ico",
+  // ]);
   const [fileList, setFileList] = useState([]);
   const [fileName, setFileName] = useState("");
   const [selectedMenu, setSelectedMenu] = useState("");
@@ -65,6 +65,8 @@ const CodeEditor = () => {
       const res = await API.get(`/snapshot/${teamName}/${projectName}?fileName=` + fileName);
 
       setCode(res.data);
+      setLineCount(res.data.split("\n").length);
+      findLineIndex(res.data);
       setFileName(fileName);
       subscribe(fileName);
     } catch (error) {
@@ -110,15 +112,19 @@ const CodeEditor = () => {
   };
 
   const publish = (inputCode) => {
+    //console.log(inputCode, type, currentLine, fileName);
+    console.log("publish " + inputCode);
     if (!client.current.connected) return;
-    console.log(inputCode, type, currentLine, fileName);
 
     client.current.publish({
       destination: "/app/message",
       body: JSON.stringify({
         teamName: teamName,
+        projectName: projectName,
         code: inputCode,
-        line: lineIndex[currentLine], //현재 수정 중인 라인
+        line: lineIndex[currentLine].line, //현재 수정 중인 라인
+        start: lineIndex[currentLine].lineStart, // 현재 수정 중인 라인의 시작점
+        end: lineIndex[currentLine].lineEnd, // 현재 수정 중인 라인의 끝
         fileName: fileName,
         updateType: type, //update, delete, create
       }),
@@ -126,16 +132,13 @@ const CodeEditor = () => {
   };
 
   const subscribe = (fileName) => {
-    console.log("subscribe: " + client.current.connected);
-    console.log(teamName);
-
     client.current.subscribe(
       `/subscribe/notice/${teamName}/${fileName}`,
       (body) => {
         const json_body = JSON.parse(body.body);
-        console.log(json_body);
-        const line = json_body.line;
-        const value = code.substring(0, line.start) + json_body.code + code.substring(line.end + 1);
+        const value = code.substring(0, json_body.start) +
+          json_body.code +
+          code.substring(json_body.end + 1);
         changeCode(value, false);
         //setUsers(json_body.userList);
       }
@@ -158,39 +161,10 @@ const CodeEditor = () => {
   }, []);
 
   useEffect(() => {
-    setLineCount(code.split("\n").length);
-    findLineIndex();
+    //setLineCount(code.split("\n").length);
+    // findLineIndex();
     // publish();
   }, [code]);
-
-  const findLineIndex = () => {
-    let currentIndex = 0;
-    let lineIndexes = [];
-    let lineNumber = 0;
-
-    while (currentIndex < code.length) {
-      const newIndex = code.indexOf("\n", currentIndex);
-      if (newIndex !== -1) {
-        lineIndexes.push({
-          line: lineNumber,
-          start: currentIndex,
-          end: newIndex,
-        });
-        lineNumber++;
-        currentIndex = newIndex + 1;
-      } else {
-        break;
-      }
-    }
-
-    lineIndexes.push({
-      line: lineNumber,
-      start: currentIndex,
-      end: code.length,
-    });
-
-    setLineIndex(lineIndexes);
-  };
 
   const findBracket = () => {
     leftBracketPosition = [];
@@ -214,8 +188,8 @@ const CodeEditor = () => {
   }, [code, language]);
 
   useEffect(() => {
-    textRef.current.setSelectionRange(start, end);
-  }, [start, end]);
+    textRef.current.setSelectionRange(cursorStart, cursorEnd);
+  }, [cursorStart, cursorEnd]);
 
   const createMarkUpCode = (code) => ({
     __html: code,
@@ -253,11 +227,40 @@ const CodeEditor = () => {
     //   console.log(response.data);
     // });
   };
+  
+  const findLineIndex = () => {
+    let currentIndex = 0;
+    let lineIndexes = [];
+    let lineNumber = 0;
+
+    while (currentIndex < code.length) {
+      const newIndex = code.indexOf("\n", currentIndex);
+      if (newIndex !== -1) {
+        lineIndexes.push({
+          line: lineNumber,
+          lineStart: currentIndex,
+          lineEnd: newIndex,
+        });
+        lineNumber++;
+        currentIndex = newIndex + 1;
+      } else {
+        break;
+      }
+    }
+
+    lineIndexes.push({
+      line: lineNumber,
+      lineStart: currentIndex,
+      lineEnd: code.length,
+    });
+
+    setLineIndex(lineIndexes);
+  };
 
   // 수정 중인 라인 찾는 거
-  const findCurrentLine = (start) => {
+  const findCurrentLine = () => {
     for (let i = 0; i < lineIndex.length; i++) {
-      if (start >= lineIndex[i].start && start <= lineIndex[i].end) {
+      if (cursorStart >= lineIndex[i].lineStart && cursorStart <= lineIndex[i].lineEnd) {
         setCurrentLine(lineIndex[i].line);
         break;
       }
@@ -265,59 +268,58 @@ const CodeEditor = () => {
   };
 
   const handleKeydown = (e) => {
-    const start = e.target.selectionStart;
-    const end = e.target.selectionEnd;
+    // const start = e.target.selectionStart;
+    // const end = e.target.selectionEnd;
+    const code = e.target.value;
     let value;
     //updateCode(e.key);
-    setStart(start);
-    setEnd(end);
-    findCurrentLine(start);
+    console.log(lineIndex);
 
     if (e.key === "Tab") {
       e.preventDefault();
-      value = code.substring(0, start) + "\t" + code.substring(end);
+      value = code.substring(0, cursorStart) + "\t" + code.substring(cursorEnd);
       textRef.value = value;
-      setStart(start + 1);
-      setEnd(end + 1);
+      setCursorStart(cursorStart + 1);
+      setCursorEnd(cursorEnd + 1);
       changeCode(value, true);
     } else if (e.key === "Backspace") {
-      if (start === lineIndex[currentLine].start) {
+      if (cursorStart === lineIndex[currentLine].cursorStart) {
         setType("delete");
         publish("");
       }
     } else if (e.key === "{") {
       e.preventDefault();
-      value = code.substring(0, start) + "{}" + code.substring(end);
-      setStart(start + 1);
+      value = code.substring(0, cursorStart) + "{}" + code.substring(cursorEnd);
+      setCursorStart(cursorStart + 1);
       changeCode(value, true);
-      setEnd(end + 1);
+      setCursorEnd(cursorEnd + 1);
     } else if (e.key === "(") {
       e.preventDefault();
-      value = code.substring(0, start) + "()" + code.substring(end);
+      value = code.substring(0, cursorStart) + "()" + code.substring(cursorEnd);
       textRef.value = value;
-      setStart(start + 1);
-      setEnd(end + 1);
+      setCursorStart(cursorStart + 1);
+      setCursorEnd(cursorEnd + 1);
       changeCode(value, true);
     } else if (e.key === "[") {
       e.preventDefault();
-      value = code.substring(0, start) + "[]" + code.substring(end);
+      value = code.substring(0, cursorStart) + "[]" + code.substring(cursorEnd);
       textRef.value = value;
-      setStart(start + 1);
-      setEnd(end + 1);
+      setCursorStart(cursorStart + 1);
+      setCursorEnd(cursorEnd + 1);
       changeCode(value, true);
     } else if (e.key === "'") {
       e.preventDefault();
-      value = code.substring(0, start) + "''" + code.substring(end);
+      value = code.substring(0, cursorStart) + "''" + code.substring(cursorEnd);
       textRef.value = value;
-      setStart(start + 1);
-      setEnd(end + 1);
+      setCursorStart(cursorStart + 1);
+      setCursorEnd(cursorEnd + 1);
       changeCode(value, true);
     } else if (e.key === '"') {
       e.preventDefault();
-      value = code.substring(0, start) + '""' + code.substring(end);
+      value = code.substring(0, cursorStart) + '""' + code.substring(cursorEnd);
       textRef.value = value;
-      setStart(start + 1);
-      setEnd(end + 1);
+      setCursorStart(cursorStart + 1);
+      setCursorEnd(cursorEnd + 1);
       changeCode(value, true);
     } else if (e.key === "Enter") {
       e.preventDefault();
@@ -325,13 +327,13 @@ const CodeEditor = () => {
       findBracket();
       if (leftBracketPosition.length > 0) {
         for (let i = 0; i < leftBracketPosition.length; i++) {
-          if (start > leftBracketPosition[i]) {
+          if (cursorStart > leftBracketPosition[i]) {
             tabCount++;
           }
-          if (start > rightBracketPosition[i]) {
+          if (cursorStart > rightBracketPosition[i]) {
             tabCount--;
           }
-          if (start === Number(rightBracketPosition[i])) {
+          if (cursorStart === Number(rightBracketPosition[i])) {
             enterCount++;
           }
         }
@@ -339,34 +341,35 @@ const CodeEditor = () => {
 
       if (tabCount === 0) {
         //그냥 엔터
-        value = code.substring(0, start) + "\n" + code.substring(start);
+        value = code.substring(0, cursorStart) + "\n" + code.substring(cursorStart);
         textRef.value = value;
       } else if (tabCount > 0 && enterCount > 0) {
         //바로 뒤에 닫힌 대괄호가 있을 때
         value =
-          code.substring(0, start) +
+          code.substring(0, cursorStart) +
           "\n" +
           "\t".repeat(tabCount) +
           "\n" +
           "\t".repeat(tabCount - 1) +
-          code.substring(start);
+          code.substring(cursorStart);
         textRef.value = value;
         changeCode(value, true);
       } else {
         //대괄호 있을 때
         value =
-          code.substring(0, start) +
+          code.substring(0, cursorStart) +
           "\n" +
           "\t".repeat(tabCount) +
-          code.substring(start);
+          code.substring(cursorStart);
         textRef.value = value;
       }
       changeCode(value, true);
-      setStart(start + tabCount + 1);
-      setEnd(end + tabCount + 1);
+      setCursorStart(cursorStart + tabCount + 1);
+      setCursorEnd(cursorEnd + tabCount + 1);
     } else {
       setType("update");
-      setCode(e.target.value);
+      // setCode(e.target.value);
+      console.log("keyDown: " + e.key);
     }
   };
 
@@ -374,9 +377,8 @@ const CodeEditor = () => {
   const pasteClipboard = (e) => {
     e.preventDefault();
     // console.log("paste");
-    console.log(type);
     setType("paste");
-    console.log(type);
+    // console.log(type);
     let value = e.clipboardData.getData("text").split("\n");
     publish(value);
     changeCode(e.clipboardData.getData("text"), true);
@@ -386,15 +388,55 @@ const CodeEditor = () => {
     navigator.clipboard.writeText(editorId);
   };
 
+  const shareCode = (e) => {
+    const value = e.target.value.substring(
+      lineIndex[currentLine].lineStart,
+      lineIndex[currentLine].lineEnd
+    );
+
+    setLineCount(e.target.value.split("\n").length);
+    publish(value);
+  }
+
+  const total = async (e) => {
+    console.log(e.target.value);
+    const promise = await new Promise((resolve) => {
+      setCursorStart(e.target.selectionStart);
+      setCursorEnd(e.target.selectionEnd);
+      resolve();
+    })
+
+    const promise1 = await new Promise((resolve) => {
+      findLineIndex(e.target.value);
+      findCurrentLine();
+      resolve();
+    })
+
+    const promise2 = await new Promise((resolve) => {
+      handleKeydown(e);
+      resolve();
+    })
+
+    const promise3 = await new Promise((resolve) => {
+      findLineIndex(e.target.value);
+      findCurrentLine();
+      resolve();     
+    })
+
+    Promise.all([promise, promise1, promise2, promise3])
+    .then(() => {
+    })
+  }
+  const [text, setText] = useState("");
   return (
     <>
-      <Header teamName={teamName} projectName={projectName} comment={"good"}/>
+      <Header teamName={teamName} projectName={projectName} comment={"good"} />
       <div className="mainFrameRow" style={{ gap: "0" }}>
         <div className="col">
-          {paths.length > 0 && (
+          {fileList.length > 0 && (
             <Directory
-              // paths={fileList}
-              paths={paths}
+              paths={fileList}
+              // paths={paths}
               getCode={getCode}
               createFile={createFile}
               deleteFile={(e) => deleteFile(e)}
@@ -442,19 +484,14 @@ const CodeEditor = () => {
                 value={code}
                 onChange={(e) => {
                   if (type !== "paste") {
-                    console.log(e.target.value);
+                    // console.log(e.target.value);
                     changeCode(e.target.value, true);
-                    const value = code.substring(
-                      lineIndex[currentLine].start,
-                      lineIndex[currentLine].end + 1
-                    );
-                    console.log(value);
-                    publish(value);
+                    shareCode(e);
                   }
                 }}
                 className="code-editor__textarea"
                 rows={1}
-                onKeyDown={(e) => handleKeydown(e)}
+                onKeyDown={(e) => total(e)}
                 onInput={handleResizeHeight}
                 autoComplete="false"
                 spellCheck="false"
@@ -466,6 +503,10 @@ const CodeEditor = () => {
                   dangerouslySetInnerHTML={createMarkUpCode(highlightedHTML)}
                 ></code>
               </pre>
+              <textarea
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+              />
             </div>
           </div>
         </div>
