@@ -9,7 +9,7 @@ import AWS from "aws-sdk";
 import API from "../BaseUrl";
 import { GoChevronUp, GoChevronDown } from "react-icons/go";
 
-const DragnDrop = ({ isOpened, setIsOpened, teamName, setFileList }) => {
+const DragnDrop = ({ isOpened, setIsOpened, teamName, projectName, setFileList }) => {
   AWS.config.update({
     region: "ap-northeast-2",
     accessKeyId: process.env.REACT_APP_S3_ACCESSKEY,
@@ -74,7 +74,7 @@ const DragnDrop = ({ isOpened, setIsOpened, teamName, setFileList }) => {
 
     async function fetchFiles() {
       try {
-        const res = await API.post(`/${teamName}/snapshots/save`, formData, {
+        const res = await API.post(`/${teamName}/${projectName}/snapshots/save`, formData, {
           headers: {
             "Content-Type": "multipart/form-data",
           },

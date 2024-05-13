@@ -186,6 +186,9 @@ function ScmPage() {
           <button className="clickBtn" onClick={() => setOpenTeamModal(true)}>
             팀 생성
           </button>
+          <button className="clickBtn" onClick={() => navigate(`/editor/${teamName}/${projectName}/0`)}>
+            에디터
+          </button>
         </div>
         <div className="scmPageFrame">
           <List className="listBtn" elementClassName="listElementBtn" listNames={teamList} onClick={getProjectList}></List>
@@ -210,7 +213,7 @@ function ScmPage() {
                   {projectName}
                 </h4>
                 <p>#{item.comment}</p>
-                <button onClick={() => navigate(`/${teamName}/${projectName}/${item.manageId}`)}>Button</button>
+                <button className="clickBtn" onClick={() => navigate(`/${teamName}/${projectName}/${item.manageId}`)}>view code</button>
               </VerticalTimelineElement>
             ))}
           </VerticalTimeline>

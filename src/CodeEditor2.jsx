@@ -13,7 +13,7 @@ import SaveButton from "./Components/SaveButton";
 import { useBeforeunload } from "react-beforeunload";
 import Header from "./Components/Header";
 
-const CodeEditor = () => {
+const CodeEditor2 = () => {
   useBeforeunload((event) => event.preventDefault());
 
   const { lineRef, textRef, handleScrollChange } = useEditorScroll();
@@ -24,29 +24,19 @@ const CodeEditor = () => {
   const [start, setStart] = useState(0);
   const [end, setEnd] = useState(0);
   const [users, setUsers] = useState(["이현", "준형", "규민"]);
-  const [paths, setPaths] = useState([
-    "front2/src/Component/BackButton.jsx",
-    "front2/src/Component/CloseButton.jsx",
-    "front2/src/Component/CommitList.jsx",
-    "front2/public/index.html",
-    "front2/RAEDME.md",
-    "front2/public/favicon.ico",
-  ]);
+  const [paths, setPaths] = useState([]);
   const [fileList, setFileList] = useState([]);
   const [fileName, setFileName] = useState("");
   const [selectedMenu, setSelectedMenu] = useState("");
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isOpened, setIsOpened] = useState(true);
-  const [lineIndex, setLineIndex] = useState([]);
-  const [currentLine, setCurrentLine] = useState(0);
-  const [type, setType] = useState("create");
   let leftBracketPosition = [];
   let rightBracketPosition = [];
   let enterCount = 0;
   let tabCount = 0;
 
   const client = useRef();
-  let { editorId, teamName, commitId, projectName } = useParams();
+  let { editorId, teamName, projectName, commitId } = useParams();
 
   /**
    * Socket
@@ -56,7 +46,9 @@ const CodeEditor = () => {
     //updateUsers()
 
     if (commitId > 0) {
+      
     }
+    
     return () => disconnect();
   }, []);
 
@@ -64,24 +56,25 @@ const CodeEditor = () => {
     try {
       const res = await API.get(`/snapshot/${teamName}/${projectName}?fileName=` + fileName);
 
-      setCode(res.data);
+      console.log(res.data);
+      //setCode(res.data);
       setFileName(fileName);
       subscribe(fileName);
     } catch (error) {
-      console.error(error);
+      console.error(error)
     }
-  }
+  };
 
   const deleteFile = (e) => {
     e.preventDefault();
     e.stopPropagation();
-
+    
     alert("파일을 삭제하시겠습니까?");
-  };
+  }
 
   const createFile = (fileName) => {
     alert(fileName);
-  };
+  }
 
   const updateUsers = () => {
     API.post(`/editor/${editorId}`)
@@ -93,7 +86,6 @@ const CodeEditor = () => {
       });
   };
 
-  // TODO: 카프카
   const connect = () => {
     client.current = new StompJs.Client({
       brokerURL: "ws://localhost:8080/stomp",
@@ -111,16 +103,14 @@ const CodeEditor = () => {
 
   const publish = (inputCode) => {
     if (!client.current.connected) return;
-    console.log(inputCode, type, currentLine, fileName);
 
     client.current.publish({
       destination: "/app/message",
       body: JSON.stringify({
         teamName: teamName,
         code: inputCode,
-        line: lineIndex[currentLine], //현재 수정 중인 라인
-        fileName: fileName,
-        updateType: type, //update, delete, create
+        line: lineCount,
+        fileName: fileName
       }),
     });
   };
@@ -129,20 +119,13 @@ const CodeEditor = () => {
     console.log("subscribe: " + client.current.connected);
     console.log(teamName);
 
-    client.current.subscribe(
-      `/subscribe/notice/${teamName}/${fileName}`,
-      (body) => {
-        const json_body = JSON.parse(body.body);
-        console.log(json_body);
-        const line = json_body.line;
-        const value = code.substring(0, line.start) + json_body.code + code.substring(line.end + 1);
-        changeCode(value, false);
-        //setUsers(json_body.userList);
-      }
-    );
+    client.current.subscribe(`/subscribe/notice/${teamName}/${fileName}`, (body) => {
+      const json_body = JSON.parse(body.body);
+      console.log(json_body);
+      changeCode(json_body.code, false);
+      //setUsers(json_body.userList);
+    });
   };
-
-  // TODO: 카프카 끝
 
   // const addCode = (text, start) => {
   //   const value = code.substring(0, start) + text + code.substring(start);
@@ -159,40 +142,11 @@ const CodeEditor = () => {
 
   useEffect(() => {
     setLineCount(code.split("\n").length);
-    findLineIndex();
     // publish();
   }, [code]);
 
-  const findLineIndex = () => {
-    let currentIndex = 0;
-    let lineIndexes = [];
-    let lineNumber = 0;
-
-    while (currentIndex < code.length) {
-      const newIndex = code.indexOf("\n", currentIndex);
-      if (newIndex !== -1) {
-        lineIndexes.push({
-          line: lineNumber,
-          start: currentIndex,
-          end: newIndex,
-        });
-        lineNumber++;
-        currentIndex = newIndex + 1;
-      } else {
-        break;
-      }
-    }
-
-    lineIndexes.push({
-      line: lineNumber,
-      start: currentIndex,
-      end: code.length,
-    });
-
-    setLineIndex(lineIndexes);
-  };
-
   const findBracket = () => {
+    console.log(code);
     leftBracketPosition = [];
     rightBracketPosition = [];
     const rightExp = /\}/g;
@@ -202,9 +156,12 @@ const CodeEditor = () => {
       (leftPos = leftExp.exec(code)) !== null &&
       (rightPos = rightExp.exec(code)) !== null
     ) {
+      console.log(leftPos.index);
+      console.log(rightPos.index);
       leftBracketPosition.push(leftPos.index);
       rightBracketPosition.push(rightPos.index);
     }
+    console.log(leftBracketPosition, rightBracketPosition);
   };
 
   useEffect(() => {
@@ -230,9 +187,10 @@ const CodeEditor = () => {
   };
 
   const changeCode = (inputCode, myState) => {
-    console.log(inputCode);
     if (myState) {
+      //console.log(inputCode);
       setCode(inputCode);
+      publish(inputCode);
     } else {
       if (inputCode === code) return;
       setCode(inputCode);
@@ -254,16 +212,6 @@ const CodeEditor = () => {
     // });
   };
 
-  // 수정 중인 라인 찾는 거
-  const findCurrentLine = (start) => {
-    for (let i = 0; i < lineIndex.length; i++) {
-      if (start >= lineIndex[i].start && start <= lineIndex[i].end) {
-        setCurrentLine(lineIndex[i].line);
-        break;
-      }
-    }
-  };
-
   const handleKeydown = (e) => {
     const start = e.target.selectionStart;
     const end = e.target.selectionEnd;
@@ -271,7 +219,6 @@ const CodeEditor = () => {
     //updateCode(e.key);
     setStart(start);
     setEnd(end);
-    findCurrentLine(start);
 
     if (e.key === "Tab") {
       e.preventDefault();
@@ -280,11 +227,6 @@ const CodeEditor = () => {
       setStart(start + 1);
       setEnd(end + 1);
       changeCode(value, true);
-    } else if (e.key === "Backspace") {
-      if (start === lineIndex[currentLine].start) {
-        setType("delete");
-        publish("");
-      }
     } else if (e.key === "{") {
       e.preventDefault();
       value = code.substring(0, start) + "{}" + code.substring(end);
@@ -321,7 +263,6 @@ const CodeEditor = () => {
       changeCode(value, true);
     } else if (e.key === "Enter") {
       e.preventDefault();
-      setType("create");
       findBracket();
       if (leftBracketPosition.length > 0) {
         for (let i = 0; i < leftBracketPosition.length; i++) {
@@ -364,22 +305,7 @@ const CodeEditor = () => {
       changeCode(value, true);
       setStart(start + tabCount + 1);
       setEnd(end + tabCount + 1);
-    } else {
-      setType("update");
-      setCode(e.target.value);
     }
-  };
-
-  //TODO: type paste로 안 바뀜
-  const pasteClipboard = (e) => {
-    e.preventDefault();
-    // console.log("paste");
-    console.log(type);
-    setType("paste");
-    console.log(type);
-    let value = e.clipboardData.getData("text").split("\n");
-    publish(value);
-    changeCode(e.clipboardData.getData("text"), true);
   };
 
   const copyClipboard = () => {
@@ -391,19 +317,19 @@ const CodeEditor = () => {
       <Header teamName={teamName} projectName={projectName} comment={"good"}/>
       <div className="mainFrameRow" style={{ gap: "0" }}>
         <div className="col">
-          {paths.length > 0 && (
-            <Directory
-              // paths={fileList}
-              paths={paths}
-              getCode={getCode}
-              createFile={createFile}
-              deleteFile={(e) => deleteFile(e)}
-              selectedMenu={selectedMenu}
-              setSelectedMenu={setSelectedMenu}
-              isCollapsed={isCollapsed}
-              setIsCollapsed={setIsCollapsed}
-            ></Directory>
-          )}
+        {fileList.length > 0 && (
+          <Directory
+            paths={fileList}
+            // paths={paths}
+            getCode={getCode}
+            createFile={createFile}
+            deleteFile={(e) => deleteFile(e)}
+            selectedMenu={selectedMenu}
+            setSelectedMenu={setSelectedMenu}
+            isCollapsed={isCollapsed}
+            setIsCollapsed={setIsCollapsed}
+          ></Directory>
+        )}
           {/* <List className="listText" elementClassName="listElementText" listNames={users} onClick='none'/> */}
           <Participants participants={users} isCollapsed={isCollapsed} />
         </div>
@@ -418,15 +344,14 @@ const CodeEditor = () => {
               <option value="cpp">C++</option>
             </select>
           </div>
-          {!code.length > 0 && (
-            <DragnDrop
-              isOpened={isOpened}
-              setIsOpened={setIsOpened}
-              teamName={teamName}
-              setFileList={setFileList}
-              projectName={projectName}
-            />
-          )}
+
+          <DragnDrop
+            isOpened={isOpened}
+            setIsOpened={setIsOpened}
+            teamName={teamName}
+            setFileList={setFileList}
+            projectName={projectName}
+          />
 
           <div className="code-editor">
             <div className="code__lines" ref={lineRef}>
@@ -440,25 +365,13 @@ const CodeEditor = () => {
                 ref={textRef}
                 onScroll={handleScrollChange}
                 value={code}
-                onChange={(e) => {
-                  if (type !== "paste") {
-                    console.log(e.target.value);
-                    changeCode(e.target.value, true);
-                    const value = code.substring(
-                      lineIndex[currentLine].start,
-                      lineIndex[currentLine].end + 1
-                    );
-                    console.log(value);
-                    publish(value);
-                  }
-                }}
+                onChange={(e) => changeCode(e.target.value, true)}
                 className="code-editor__textarea"
                 rows={1}
                 onKeyDown={(e) => handleKeydown(e)}
                 onInput={handleResizeHeight}
                 autoComplete="false"
                 spellCheck="false"
-                onPaste={pasteClipboard}
               />
               <pre className="code-editor__present">
                 <code
@@ -474,4 +387,4 @@ const CodeEditor = () => {
   );
 };
 
-export default CodeEditor;
+export default CodeEditor2;
