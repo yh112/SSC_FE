@@ -40,7 +40,7 @@ textarea {
   font-size: 1.25rem;
   position: absolute;
   margin: 0;
-  /* margin-left: 30px; */
+  margin-left: 30px;
   white-space: pre;
   overflow: auto;
   text-align: left;
@@ -50,6 +50,7 @@ textarea {
   tab-size: 4;
   height: fit-content;
   width: 100%;
+  font-family: monospace;
 }
 
 .code-editor__textarea {
