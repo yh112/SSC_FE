@@ -54,7 +54,7 @@ textarea {
 }
 
 .code-editor__textarea {
-  caret-color: gray;
+  caret-color: pink;
   margin-left: 30px;
   /* color: black; */
   color: transparent;

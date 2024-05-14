@@ -39,7 +39,8 @@ const CodeEditor = () => {
   const [isOpened, setIsOpened] = useState(true);
   const [lineIndex, setLineIndex] = useState([]);
   const [currentLine, setCurrentLine] = useState(0);
-  const [type, setType] = useState("create");
+  const [type, setType] = useState("update");
+  const [cursor, setCursor] = useState(0);
   let leftBracketPosition = [];
   let rightBracketPosition = [];
   let enterCount = 0;
@@ -66,7 +67,6 @@ const CodeEditor = () => {
 
       setCode(res.data);
       setLineCount(res.data.split("\n").length);
-      findLineIndex(res.data);
       setFileName(fileName);
       subscribe(fileName);
     } catch (error) {
@@ -112,8 +112,6 @@ const CodeEditor = () => {
   };
 
   const publish = (inputCode) => {
-    //console.log(inputCode, type, currentLine, fileName);
-    console.log("publish " + inputCode);
     if (!client.current.connected) return;
 
     client.current.publish({
@@ -122,25 +120,30 @@ const CodeEditor = () => {
         teamName: teamName,
         projectName: projectName,
         code: inputCode,
-        line: lineIndex[currentLine].line, //현재 수정 중인 라인
-        start: lineIndex[currentLine].lineStart, // 현재 수정 중인 라인의 시작점
-        end: lineIndex[currentLine].lineEnd, // 현재 수정 중인 라인의 끝
+        line: currentLine, //현재 수정 중인 라인
+        start: lineIndex.start, // 현재 수정 중인 라인의 시작점
+        end: lineIndex.end, // 현재 수정 중인 라인의 끝
+        cursorStart: cursorStart,
+        cursorEnd: cursorEnd,
         fileName: fileName,
         updateType: type, //update, delete, create
       }),
     });
   };
 
+  useEffect(() => {
+    textRef.current.setSelectionRange(cursor, cursor);
+    console.log("cursor: " + cursor);
+  }, [cursor])
+
   const subscribe = (fileName) => {
     client.current.subscribe(
       `/subscribe/notice/${teamName}/${fileName}`,
       (body) => {
         const json_body = JSON.parse(body.body);
-        const value = code.substring(0, json_body.start) +
-          json_body.code +
-          code.substring(json_body.end + 1);
-        changeCode(value, false);
-        //setUsers(json_body.userList);
+
+        changeCode(json_body.code, false);
+        setCursor(json_body.cursorStart + 1);
       }
     );
   };
@@ -160,12 +163,6 @@ const CodeEditor = () => {
     textRef.current?.focus();
   }, []);
 
-  useEffect(() => {
-    //setLineCount(code.split("\n").length);
-    // findLineIndex();
-    // publish();
-  }, [code]);
-
   const findBracket = () => {
     leftBracketPosition = [];
     rightBracketPosition = [];
@@ -181,15 +178,15 @@ const CodeEditor = () => {
     }
   };
 
-  useEffect(() => {
-    setHighlightedCode(
-      hljs.highlight(code, { language }).value.replace(/" "/g, "&nbsp; ")
-    );
-  }, [code, language]);
+  // useEffect(() => {
+  //   setHighlightedCode(
+  //     hljs.highlight(code, { language }).value.replace(/" "/g, "&nbsp; ")
+  //   );
+  // }, [code, language]);
 
-  useEffect(() => {
-    textRef.current.setSelectionRange(cursorStart, cursorEnd);
-  }, [cursorStart, cursorEnd]);
+  // useEffect(() => {
+  //   textRef.current.setSelectionRange(cursorStart, cursorEnd);
+  // }, [cursorStart, cursorEnd]);
 
   const createMarkUpCode = (code) => ({
     __html: code,
@@ -200,11 +197,21 @@ const CodeEditor = () => {
   };
 
   const handleResizeHeight = () => {
-    textRef.current.style.height = textRef.current.scrollHeight + "px";
+    const textArea = textRef.current;
+
+    const cursorPosition = textArea.selectionStart;
+    const lineHeight = parseInt(getComputedStyle(textArea).lineHeight);
+    const lines = lineCount;
+    const scrollPosition = lineHeight * lines;
+
+    textArea.scrollTop = scrollPosition - textArea.offsetHeight / 2
+
+    console.log(scrollPosition + " / " + lineHeight);
+
+    console.log("top: " + textArea.scrollTop);
   };
 
   const changeCode = (inputCode, myState) => {
-    console.log(inputCode);
     if (myState) {
       setCode(inputCode);
     } else {
@@ -227,7 +234,7 @@ const CodeEditor = () => {
     //   console.log(response.data);
     // });
   };
-  
+
   const findLineIndex = () => {
     let currentIndex = 0;
     let lineIndexes = [];
@@ -267,77 +274,97 @@ const CodeEditor = () => {
     }
   };
 
+  const searchCurrentLine = (e, start, end) => {
+    // 키다운 이벤트 처리 -> 현재 커서 위치(start, end, linecount)
+    // 체인지 이벤트 처리 -> 
+    const startNum = code.lastIndexOf("\n", start);
+    const lineStart = startNum < 0 ? 0 : startNum + 1;
+    const lineEnd = code.indexOf("\n", start);
+
+    let lineNumber = 0;
+    let index = 0;
+
+    while (index <= start) {
+      index = code.indexOf('\n', index) + 1;
+      lineNumber++;
+    }
+
+    setCursorStart(start);
+    setCursorEnd(end);
+    setCurrentLine(lineNumber - 1);
+    setLineIndex({ start: lineStart, end: lineEnd });
+  }
+
   const handleKeydown = (e) => {
     // const start = e.target.selectionStart;
     // const end = e.target.selectionEnd;
     const code = e.target.value;
     let value;
     //updateCode(e.key);
-    console.log(lineIndex);
 
     if (e.key === "Tab") {
       e.preventDefault();
       value = code.substring(0, cursorStart) + "\t" + code.substring(cursorEnd);
       textRef.value = value;
-      setCursorStart(cursorStart + 1);
-      setCursorEnd(cursorEnd + 1);
+      setCursorStart((cursorStart) => cursorStart + 1);
+      setCursorEnd((cursorEnd) => cursorEnd + 1);
       changeCode(value, true);
     } else if (e.key === "Backspace") {
-      if (cursorStart === lineIndex[currentLine].cursorStart) {
+      if (cursorStart === lineIndex.start) {
         setType("delete");
         publish("");
       }
     } else if (e.key === "{") {
       e.preventDefault();
       value = code.substring(0, cursorStart) + "{}" + code.substring(cursorEnd);
-      setCursorStart(cursorStart + 1);
+      setCursorStart((cursorStart) => cursorStart + 1);
+      setCursorEnd((cursorEnd) => cursorEnd + 1);
       changeCode(value, true);
-      setCursorEnd(cursorEnd + 1);
     } else if (e.key === "(") {
       e.preventDefault();
       value = code.substring(0, cursorStart) + "()" + code.substring(cursorEnd);
       textRef.value = value;
-      setCursorStart(cursorStart + 1);
-      setCursorEnd(cursorEnd + 1);
+      setCursorStart((cursorStart) => cursorStart + 1);
+      setCursorEnd((cursorEnd) => cursorEnd + 1);
       changeCode(value, true);
     } else if (e.key === "[") {
       e.preventDefault();
       value = code.substring(0, cursorStart) + "[]" + code.substring(cursorEnd);
       textRef.value = value;
-      setCursorStart(cursorStart + 1);
-      setCursorEnd(cursorEnd + 1);
+      setCursorStart((cursorStart) => cursorStart + 1);
+      setCursorEnd((cursorEnd) => cursorEnd + 1);
       changeCode(value, true);
     } else if (e.key === "'") {
       e.preventDefault();
       value = code.substring(0, cursorStart) + "''" + code.substring(cursorEnd);
       textRef.value = value;
-      setCursorStart(cursorStart + 1);
-      setCursorEnd(cursorEnd + 1);
+      setCursorStart((cursorStart) => cursorStart + 1);
+      setCursorEnd((cursorEnd) => cursorEnd + 1);
       changeCode(value, true);
     } else if (e.key === '"') {
       e.preventDefault();
       value = code.substring(0, cursorStart) + '""' + code.substring(cursorEnd);
       textRef.value = value;
-      setCursorStart(cursorStart + 1);
-      setCursorEnd(cursorEnd + 1);
+      setCursorStart((cursorStart) => cursorStart + 1);
+      setCursorEnd((cursorEnd) => cursorEnd + 1);
       changeCode(value, true);
     } else if (e.key === "Enter") {
       e.preventDefault();
       setType("create");
       findBracket();
-      if (leftBracketPosition.length > 0) {
-        for (let i = 0; i < leftBracketPosition.length; i++) {
-          if (cursorStart > leftBracketPosition[i]) {
-            tabCount++;
-          }
-          if (cursorStart > rightBracketPosition[i]) {
-            tabCount--;
-          }
-          if (cursorStart === Number(rightBracketPosition[i])) {
-            enterCount++;
-          }
-        }
-      }
+      // if (leftBracketPosition.length > 0) {
+      //   for (let i = 0; i < leftBracketPosition.length; i++) {
+      //     if (cursorStart > leftBracketPosition[i]) {
+      //       tabCount++;
+      //     }
+      //     if (cursorStart > rightBracketPosition[i]) {
+      //       tabCount--;
+      //     }
+      //     if (cursorStart === Number(rightBracketPosition[i])) {
+      //       enterCount++;
+      //     }
+      //   }
+      // }
 
       if (tabCount === 0) {
         //그냥 엔터
@@ -364,12 +391,12 @@ const CodeEditor = () => {
         textRef.value = value;
       }
       changeCode(value, true);
-      setCursorStart(cursorStart + tabCount + 1);
-      setCursorEnd(cursorEnd + tabCount + 1);
+      setCursorStart((cursorStart) => cursorStart + tabCount + 1);
+      setCursorEnd((cursorEnd) => cursorEnd + tabCount + 1);
     } else {
       setType("update");
+
       // setCode(e.target.value);
-      console.log("keyDown: " + e.key);
     }
   };
 
@@ -390,44 +417,12 @@ const CodeEditor = () => {
 
   const shareCode = (e) => {
     const value = e.target.value.substring(
-      lineIndex[currentLine].lineStart,
-      lineIndex[currentLine].lineEnd
+      lineIndex.start, lineIndex.end
     );
 
-    setLineCount(e.target.value.split("\n").length);
     publish(value);
   }
 
-  const total = async (e) => {
-    console.log(e.target.value);
-    const promise = await new Promise((resolve) => {
-      setCursorStart(e.target.selectionStart);
-      setCursorEnd(e.target.selectionEnd);
-      resolve();
-    })
-
-    const promise1 = await new Promise((resolve) => {
-      findLineIndex(e.target.value);
-      findCurrentLine();
-      resolve();
-    })
-
-    const promise2 = await new Promise((resolve) => {
-      handleKeydown(e);
-      resolve();
-    })
-
-    const promise3 = await new Promise((resolve) => {
-      findLineIndex(e.target.value);
-      findCurrentLine();
-      resolve();     
-    })
-
-    Promise.all([promise, promise1, promise2, promise3])
-    .then(() => {
-    })
-  }
-  const [text, setText] = useState("");
   return (
     <>
       <Header teamName={teamName} projectName={projectName} comment={"good"} />
@@ -478,20 +473,22 @@ const CodeEditor = () => {
             </div>
 
             <div>
+              {/* <span style={{color: "white"}}>{fileName}</span> */}
               <textarea
                 ref={textRef}
                 onScroll={handleScrollChange}
                 value={code}
                 onChange={(e) => {
                   if (type !== "paste") {
-                    // console.log(e.target.value);
-                    changeCode(e.target.value, true);
+                    searchCurrentLine(e, cursorStart, cursorEnd);
                     shareCode(e);
-                  }
-                }}
+                  };
+                }
+                }
                 className="code-editor__textarea"
-                rows={1}
-                onKeyDown={(e) => total(e)}
+                rows={lineCount}
+                onKeyUp={(e) => handleKeydown(e)}
+                onKeyDown={(e) => searchCurrentLine(e, e.target.selectionStart, e.target.selectionEnd)}
                 onInput={handleResizeHeight}
                 autoComplete="false"
                 spellCheck="false"
@@ -500,13 +497,9 @@ const CodeEditor = () => {
               <pre className="code-editor__present">
                 <code
                   onInput={handleResizeHeight}
-                  dangerouslySetInnerHTML={createMarkUpCode(highlightedHTML)}
+                  dangerouslySetInnerHTML={createMarkUpCode(hljs.highlight(code, { language }).value.replace(/" "/g, "&nbsp; "))}
                 ></code>
               </pre>
-              <textarea
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-              />
             </div>
           </div>
         </div>
