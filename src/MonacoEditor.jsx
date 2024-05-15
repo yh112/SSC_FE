@@ -1,6 +1,8 @@
 import React, { useCallback, useEffect, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
 import Editor, { useMonaco } from "@monaco-editor/react";
+import * as monaco from 'monaco-editor';
+import tomorrowTheme from "monaco-themes/themes/Tomorrow-Night.json";
 import SockJS from "sockjs-client";
 import * as StompJs from "@stomp/stompjs";
 import API from "./BaseUrl";
@@ -13,7 +15,7 @@ import Header from "./Components/Header";
 
 const MonacoEditor = () => {
   useBeforeunload((event) => event.preventDefault());
-
+//   const monaco = useMonaco();
   const [cursorStart, setCursorStart] = useState(0);
   const [cursorEnd, setCursorEnd] = useState(0);
   const [users, setUsers] = useState(["이현", "준형", "규민"]);
@@ -30,7 +32,19 @@ const MonacoEditor = () => {
   const [language, setLanguage] = useState("javascript");
 
   const client = useRef();
-  let { editorId, teamName, commitId, projectName } = useParams();
+  //   let { editorId, teamName, commitId, projectName } = useParams();
+  let { teamName, commitId, projectName } = useParams();
+
+  const editorId = "user1";
+
+  const editorRef = useRef(null);
+
+  function handleEditorDidMount(editor, monaco) {
+    // here is the editor instance
+    // you can store it in `useRef` for further usage
+    editorRef.current = editor;
+  }
+
 
   /**
    * Socket
@@ -50,11 +64,12 @@ const MonacoEditor = () => {
         `/snapshot/${teamName}/${projectName}?fileName=` + fileName
       );
 
-    //   setCode(res.data);
+      setLanguage(fileName.split(".")[1]);
+      setCode(res.data);
       setFileName(fileName);
       subscribe(fileName);
     } catch (error) {
-      console.error(error);
+      console.error("error" + error);
     }
   }
 
@@ -78,8 +93,6 @@ const MonacoEditor = () => {
         console.error("Error fetching data:", error);
       });
   };
-
-  //   const monaco = useMonaco();
 
   //   useEffect(() => {
   //     if (monaco) {
@@ -144,16 +157,16 @@ const MonacoEditor = () => {
     client.current.deactivate();
   };
 
-  const handleEditorChange = (value, event) => {
+  const handleEditorChange = (value, e) => {
+    // console.log(e);
+    console.log(e.changes);
     setCode(value);
-    console.log(value);
+    // console.log(editorRef.current.getRange(1));
+    // console.log(value);
   };
 
-  const changeLanguage = (e) => {
-    setLanguage(e.target.value);
-  };
-
-  const searchCurrentLine = (e, start, end) => {
+  const searchCurrentLine = (start, end) => {
+    console.log("되냐고?");
     // 키다운 이벤트 처리 -> 현재 커서 위치(start, end, linecount)
     // 체인지 이벤트 처리 ->
     const startNum = code.lastIndexOf("\n", start);
@@ -198,7 +211,12 @@ const MonacoEditor = () => {
 
   return (
     <>
-      <Header teamName={teamName} projectName={projectName} comment={"good"} />
+      <Header
+        teamName={teamName}
+        projectName={projectName}
+        fileName={fileName}
+        comment={"good"}
+      />
       <div className="mainFrameRow" style={{ gap: "0" }}>
         <div className="col">
           {fileList.length > 0 && (
@@ -217,44 +235,36 @@ const MonacoEditor = () => {
           {/* <List className="listText" elementClassName="listElementText" listNames={users} onClick='none'/> */}
           <Participants participants={users} isCollapsed={isCollapsed} />
         </div>
-      </div>
-      <div className="mainFrameCol" style={{ gap: "20px" }}>
-        <div className="topFrameBetween">
-          {selectedMenu}
-          <select className="selectBox" onChange={(e) => changeLanguage(e)}>
-            <option value="java">Java</option>
-            <option value="javascript">Javascript</option>
-            <option value="python">Python</option>
-            <option value="c">C</option>
-            <option value="cpp">C++</option>
-          </select>
-        </div>
-        {!code.length > 0 && (
-          <DragnDrop
-            isOpened={isOpened}
-            setIsOpened={setIsOpened}
-            teamName={teamName}
-            setFileList={setFileList}
-            projectName={projectName}
+        <div className="mainFrameCol" style={{ gap: "20px" }}>
+          {!code.length > 0 && (
+            <DragnDrop
+              isOpened={isOpened}
+              setIsOpened={setIsOpened}
+              teamName={teamName}
+              setFileList={setFileList}
+              projectName={projectName}
+            />
+          )}
+
+          <Editor
+            defaultLanguage={language}
+            defaultValue=""
+            value={code}
+            onChange={handleEditorChange}
+            onMount={handleEditorDidMount}
+            theme="vs-dark"
+            onKeydown={(e) =>
+              searchCurrentLine(e.target.selectionStart, e.target.selectionEnd)
+            }
+            options={{
+              minimap: { enabled: false },
+              fontSize: 18,
+              wordWrap: "on",
+              scrollBeyondLastLine: false,
+              automaticLayout: true,
+            }}
           />
-        )}
-        <Editor
-          style={{ zIndex: "10" }}
-          defaultLanguage={language}
-          value={code}
-          onChange={handleEditorChange}
-          //   theme="tomorrow-night"
-          onKeydown={(e) =>
-            searchCurrentLine(e, e.target.selectionStart, e.target.selectionEnd)
-          }
-          options={{
-            minimap: { enabled: false },
-            fontSize: 18,
-            wordWrap: "on",
-            scrollBeyondLastLine: false,
-            automaticLayout: true,
-          }}
-        />
+        </div>
       </div>
     </>
   );
