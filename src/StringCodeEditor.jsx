@@ -142,26 +142,27 @@ const CodeEditor = () => {
       (body) => {
         const json_body = JSON.parse(body.body);
 
+        setCursor(json_body.cursorStart);
         changeCode(json_body.code, false);
-        setCursor(json_body.cursorStart + 1);
       }
     );
   };
 
-  // TODO: 카프카 끝
-
-  // const addCode = (text, start) => {
-  //   const value = code.substring(0, start) + text + code.substring(start);
-  //   setCode(value);
-  // };
 
   const disconnect = () => {
     client.current.deactivate();
   };
 
+  // TODO: 카프카 끝
+  
   useEffect(() => {
     textRef.current?.focus();
   }, []);
+
+  // const addCode = (text, start) => {
+  //   const value = code.substring(0, start) + text + code.substring(start);
+  //   setCode(value);
+  // };
 
   const findBracket = () => {
     leftBracketPosition = [];
@@ -235,59 +236,66 @@ const CodeEditor = () => {
     // });
   };
 
-  const findLineIndex = () => {
-    let currentIndex = 0;
-    let lineIndexes = [];
-    let lineNumber = 0;
+  // const findLineIndex = () => {
+  //   let currentIndex = 0;
+  //   let lineIndexes = [];
+  //   let lineNumber = 0;
 
-    while (currentIndex < code.length) {
-      const newIndex = code.indexOf("\n", currentIndex);
-      if (newIndex !== -1) {
-        lineIndexes.push({
-          line: lineNumber,
-          lineStart: currentIndex,
-          lineEnd: newIndex,
-        });
-        lineNumber++;
-        currentIndex = newIndex + 1;
-      } else {
-        break;
-      }
-    }
+  //   while (currentIndex < code.length) {
+  //     const newIndex = code.indexOf("\n", currentIndex);
+  //     if (newIndex !== -1) {
+  //       lineIndexes.push({
+  //         line: lineNumber,
+  //         lineStart: currentIndex,
+  //         lineEnd: newIndex,
+  //       });
+  //       lineNumber++;
+  //       currentIndex = newIndex + 1;
+  //     } else {
+  //       break;
+  //     }
+  //   }
 
-    lineIndexes.push({
-      line: lineNumber,
-      lineStart: currentIndex,
-      lineEnd: code.length,
-    });
+  //   lineIndexes.push({
+  //     line: lineNumber,
+  //     lineStart: currentIndex,
+  //     lineEnd: code.length,
+  //   });
 
-    setLineIndex(lineIndexes);
-  };
+  //   setLineIndex(lineIndexes);
+  // };
 
   // 수정 중인 라인 찾는 거
-  const findCurrentLine = () => {
-    for (let i = 0; i < lineIndex.length; i++) {
-      if (cursorStart >= lineIndex[i].lineStart && cursorStart <= lineIndex[i].lineEnd) {
-        setCurrentLine(lineIndex[i].line);
-        break;
-      }
-    }
-  };
+  // const findCurrentLine = () => {
+  //   for (let i = 0; i < lineIndex.length; i++) {
+  //     if (cursorStart >= lineIndex[i].lineStart && cursorStart <= lineIndex[i].lineEnd) {
+  //       setCurrentLine(lineIndex[i].line);
+  //       break;
+  //     }
+  //   }
+  // };
 
   const searchCurrentLine = (e, start, end) => {
     // 키다운 이벤트 처리 -> 현재 커서 위치(start, end, linecount)
     // 체인지 이벤트 처리 -> 
     const startNum = code.lastIndexOf("\n", start);
-    const lineStart = startNum < 0 ? 0 : startNum + 1;
-    const lineEnd = code.indexOf("\n", start);
+    const endNum = code.indexOf("\n", end);
+
+    console.log("startNum: " + startNum + " endNum: " + endNum);
+  
+    const lineStart = startNum < 0 ? 0 : startNum === endNum ? start : startNum + 1; // 현재 라인이 첫번째 라인일 때는 0, 커서 앞에 개행이 있으면 커서의 위치, 아니면 startNum + 1
+    const lineEnd = endNum < 0 ? code.length - 1 : startNum === endNum ? end : endNum - 1; // 현재 라인이 마지막 라인일 때는 code.length - 1, 커서 뒤에 개행이 있으면 커서의 위치, 아니면 endNum - 1
 
     let lineNumber = 0;
     let index = 0;
 
     while (index <= start) {
+      console.log("index: " + index + " start: " + start + " text: " + code[start] );
       index = code.indexOf('\n', index) + 1;
       lineNumber++;
     }
+
+    console.log("start: " + start + " end: " + end + " line: " + lineNumber + " lineStart: " + lineStart + " lineEnd: " + lineEnd)
 
     setCursorStart(start);
     setCursorEnd(end);
@@ -310,10 +318,14 @@ const CodeEditor = () => {
       setCursorEnd((cursorEnd) => cursorEnd + 1);
       changeCode(value, true);
     } else if (e.key === "Backspace") {
-      if (cursorStart === lineIndex.start) {
+      console.log("cursor: " + cursorStart + " line: " + lineIndex.start);
+      if (cursorStart < lineIndex.start && lineIndex.start !== 0) {
         setType("delete");
-        publish("");
+        console.log("delete");
+        // publish();
       }
+      setCursorStart((cursorStart) => cursorStart - 1);
+      setCursorEnd((cursorEnd) => cursorEnd - 1);
     } else if (e.key === "{") {
       e.preventDefault();
       value = code.substring(0, cursorStart) + "{}" + code.substring(cursorEnd);
@@ -394,10 +406,13 @@ const CodeEditor = () => {
       setCursorStart((cursorStart) => cursorStart + tabCount + 1);
       setCursorEnd((cursorEnd) => cursorEnd + tabCount + 1);
     } else {
+      console.log("그 외");
       setType("update");
-
+      setCursorStart((cursorStart) => cursorStart + 1);
+      setCursorEnd((cursorEnd) => cursorEnd + 1);
       // setCode(e.target.value);
     }
+    console.log(type);
   };
 
   //TODO: type paste로 안 바뀜

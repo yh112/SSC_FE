@@ -8,6 +8,7 @@ import SignUp from "./SignUp";
 import Scm from "./ScmPage";
 import TeamPage from "./TeamPage";
 import ProjectPage from "./ProjectPage";
+import MonacoEditor from "./MonacoEditor";
 import './index.css';
 import './App.css';
 
@@ -27,6 +28,7 @@ function App() {
           <Route path="/scm" element={<Scm/>} />
           <Route path="/team/:teamName" element={<TeamPage/>} />
           <Route path="/:teamName/:projectName/:commitId" element={<ProjectPage/>} />
+          <Route path="/test/:teamName/:projectName/:commitId" element={<MonacoEditor/>} />
         </Routes>
       </Router>
     </div>

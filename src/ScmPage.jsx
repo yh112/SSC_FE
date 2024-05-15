@@ -66,48 +66,49 @@ function ScmPage() {
   const [userList, setUserList] = useState([]);
   const [projectList, setProjectList] = useState([]);
   const [commitList, setCommitList] = useState([]);
+  const [isOpened, setIsOpened] = useState(false);
 
   let navigate = useNavigate();
 
   useEffect(() => {
     getTeamList();
-  },[])
+  }, []);
 
   // 팀 목록 조회
   async function getTeamList() {
     try {
-      const res = await API.get(`/team/list`)
+      const res = await API.get(`/team/list`);
 
       setTeamList(res.data);
       setCommitList([]);
       setUserList([]);
     } catch (error) {
-      console.error(error)
+      console.error(error);
     }
   }
 
   // 팀원 조회
   async function getUsers(teamName) {
     try {
-      const res = await API.get(`/team/${teamName}/users`)
+      const res = await API.get(`/team/${teamName}/users`);
 
       setUserList(res.data);
     } catch (error) {
-      console.error(error)
+      console.error(error);
     }
   }
 
   // 팀의 프로젝트 목록 조회
   async function getProjectList(teamName) {
     try {
-      const res = await API.get(`/team/${teamName}/projects`)
-    
+      const res = await API.get(`/team/${teamName}/projects`);
+
       setProjectList(res.data);
       setTeamName(teamName);
       getUsers(teamName);
       console.log(res.data);
     } catch (error) {
-      console.error(error)
+      console.error(error);
     }
   }
 
@@ -118,10 +119,11 @@ function ScmPage() {
 
       setCommitList(res.data);
       setProjectName(projectName);
+      setIsOpened(true);
 
       console.log(res.data);
     } catch (error) {
-      console.error(error)
+      console.error(error);
     }
   }
 
@@ -131,7 +133,7 @@ function ScmPage() {
       const res = await API.post(`/team/${teamName}/create/${projectName}`);
       getProjectList(teamName);
     } catch (error) {
-      console.error(error)
+      console.error(error);
     }
   }
 
@@ -143,8 +145,7 @@ function ScmPage() {
 
   const addTeam = () => {
     console.log(newTeamName + " 생성중");
-    API
-      .post(`/team/create/${newTeamName}`)
+    API.post(`/team/create/${newTeamName}`)
       .then((res) => {
         console.log(res);
         setOpenTeamModal(false);
@@ -155,17 +156,17 @@ function ScmPage() {
   };
 
   const dateFormatter = (date) => {
-    const formattedDate = new Intl.DateTimeFormat('ko-KR', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      hourCycle: 'h23' // 24시간 형식
+    const formattedDate = new Intl.DateTimeFormat("ko-KR", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hourCycle: "h23", // 24시간 형식
     }).format(date);
 
     return formattedDate;
-  }
+  };
 
   return (
     <>
@@ -186,37 +187,65 @@ function ScmPage() {
           <button className="clickBtn" onClick={() => setOpenTeamModal(true)}>
             팀 생성
           </button>
-          <button className="clickBtn" onClick={() => navigate(`/editor/${teamName}/${projectName}/0`)}>
+          <button
+            className="clickBtn"
+            onClick={() => navigate(`/editor/${teamName}/${projectName}/0`)}
+          >
             에디터
           </button>
         </div>
         <div className="scmPageFrame">
-          <List className="listBtn" elementClassName="listElementBtn" listNames={teamList} onClick={getProjectList}></List>
-          <List className="listBtn" elementClassName="listElementBtn" listNames={userList}></List>
-          <List className="listBtn" elementClassName="listElementBtn" listNames={projectList} onClick={getCommitList}></List>
-          <VerticalTimeline className="timeline">
-            {commitList.map((item, index) => (
-              <VerticalTimelineElement
-                key={index}
-                date={moment(item.createDate).format("YYYY-MM-DD HH:MM")}
-                dateClassName="dateClass"
-                iconStyle={{ background: "#FF7A00", color: "#000" }}
-                contentStyle={{ background: "#FF7A00", color: "#000" }}
-                contentArrowStyle={{ borderRight: `7px solid #FF7A00` }}
-                position="right"
-              >
-                <h3 className="vertical-timeline-element-title">{teamName}</h3>
-                <h4
-                  className="vertical-timeline-element-subtitle"
-                  style={{ opacity: "60%" }}
+          <List
+            className="listBtn"
+            elementClassName="listElementBtn"
+            listNames={teamList}
+            onClick={getProjectList}
+          ></List>
+          <List
+            className="listBtn"
+            elementClassName="listElementBtn"
+            listNames={userList}
+          ></List>
+          <List
+            className="listBtn"
+            elementClassName="listElementBtn"
+            listNames={projectList}
+            onClick={getCommitList}
+          ></List>
+          {isOpened && (
+            <VerticalTimeline className="timeline">
+              {commitList.map((item, index) => (
+                <VerticalTimelineElement
+                  key={index}
+                  date={moment(item.createDate).format("YYYY-MM-DD HH:MM")}
+                  dateClassName="dateClass"
+                  iconStyle={{ background: "#FF7A00", color: "#000" }}
+                  contentStyle={{ background: "#FF7A00", color: "#000" }}
+                  contentArrowStyle={{ borderRight: `7px solid #FF7A00` }}
+                  position="right"
                 >
-                  {projectName}
-                </h4>
-                <p>#{item.comment}</p>
-                <button className="clickBtn" onClick={() => navigate(`/${teamName}/${projectName}/${item.manageId}`)}>view code</button>
-              </VerticalTimelineElement>
-            ))}
-          </VerticalTimeline>
+                  <h3 className="vertical-timeline-element-title">
+                    {teamName}
+                  </h3>
+                  <h4
+                    className="vertical-timeline-element-subtitle"
+                    style={{ opacity: "60%" }}
+                  >
+                    {projectName}
+                  </h4>
+                  <p>#{item.comment}</p>
+                  <button
+                    className="clickBtn"
+                    onClick={() =>
+                      navigate(`/${teamName}/${projectName}/${item.manageId}`)
+                    }
+                  >
+                    view code
+                  </button>
+                </VerticalTimelineElement>
+              ))}
+            </VerticalTimeline>
+          )}
         </div>
       </div>
     </>
