@@ -1,10 +1,9 @@
 import React from "react";
 import { GoUpload, GoX, GoPersonAdd } from "react-icons/go";
-import { BsFillPlayCircleFill } from "react-icons/bs";
+import { VscDebugStart } from "react-icons/vsc";
 import API from "../BaseUrl";
 
-function Header({ teamName, projectName, fileName, comment }) {
-
+function Header({ teamName, projectName, fileName, comment, code }) {
   // 작업중인 파일 S3 업로드
   async function uploadToS3() {
     try {
@@ -19,10 +18,20 @@ function Header({ teamName, projectName, fileName, comment }) {
     }
   }
 
+  async function complileCode() {
+    try {
+      console.log(code);
+      const res = await API.get(`/complie/runPython?code=` + code);
+      console.log(res.data);
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
   return (
     <div className="header">
       {fileName}
-      <BsFillPlayCircleFill />
+      <VscDebugStart onClick={() => complileCode()} />
       <GoUpload onClick={() => uploadToS3()} />
       <GoPersonAdd />
       <GoX />

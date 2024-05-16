@@ -5,7 +5,8 @@ import axios from "axios";
 import hljs from "highlight.js";
 import "highlight.js/styles/github-dark.css";
 import Directory from "./Components/Directory";
-import { drawSelection } from "@uiw/react-codemirror";
+import ProjectHeader from "./Components/ProjectHeader";
+import Editor from "@monaco-editor/react";
 
 //디렉토리 구조
 //파일 누르면 코드 보여주기
@@ -15,21 +16,22 @@ function ProjectPage() {
   // const [paths, setPaths] = useState([]);
   const [selectedMenu, setSelectedMenu] = useState("");
   const [fileList, setFileList] = useState([]);
+  const [language, setLanguage] = useState("");
 
-  let paths = [
-    "front2/src/Component/BackButton.jsx",
-    "front2/src/Component/CloseButton.jsx",
-    "front2/src/Component/CommitList.jsx",
-    "front2/public/index.html",
-    "front2/RAEDME.md",
-    "front2/public/favicon.ico",
-  ];
-
-  // const [code] = useState(`
-  //   import software.amazon.awssdk.auth.credentials.ProfileCredentialsProvider;
-  //   import software.amazon.awssdk.core.sync.RequestBody;
-  //   import software.amazon.awssdk.core.waiters.WaiterResponse;
-  // `);
+  const languageList = {
+    jsx: "javascript",
+    js: "javascript",
+    tsx: "typescript",
+    ts: "typescript",
+    java: "java",
+    cpp: "cpp",
+    c: "c",
+    py: "python",
+    json: "json",
+    html: "html",
+    css: "css",
+    md: "markdown",
+  };
 
   // 프로젝트 정보 가져오기
   async function getProject() {
@@ -44,12 +46,22 @@ function ProjectPage() {
 
   async function getCode(fileName) {
     try {
-      const res = await axios.get(`https://seumu-s3-bucket.s3.ap-northeast-2.amazonaws.com/${fileName}`);
-      setCode(res.data);
+      const res = await axios.get(
+        `https://seumu-s3-bucket.s3.ap-northeast-2.amazonaws.com/${fileName}`
+      );
+      setLanguage(languageList[fileName.split(".")[1]] || "javascript");
+      setSelectedMenu(fileName.split("/")[2]);
+      if (languageList[fileName.split(".")[1]] === "json") {
+        const json = JSON.stringify(res.data, null, 2);
+        console.log(json);
+        setCode(json);
+      } else {
+        setCode(res.data);
+      }
     } catch (error) {
-      console.error(error)
+      console.error(error);
     }
-  };
+  }
 
   // 마운트할 때 프로젝트 정보 가져오기
   useEffect(() => {
@@ -62,26 +74,35 @@ function ProjectPage() {
   }, [code]);
 
   // 선택한 메뉴가 바뀔 때마다 코드를 가져옴
-  useEffect(() => {}, [selectedMenu]);
+  useEffect(() => {
+    console.log(selectedMenu);
+  }, [selectedMenu]);
 
   const navigate = useNavigate();
 
   const openCodeEditor = () => {
-    navigate("/connect")
+    navigate("/connect");
   };
 
   return (
-    <div className="projectPage">
-      {fileList.length > 0 && (
-        <Directory
-          paths={fileList}
-          setCode={setCode}
-          getCode={getCode}
-          selectedMenu={selectedMenu}
-          setSelectedMenu={setSelectedMenu}
-        />
-      )}
-      <div className="code-editor" style={{ height: "100%", padding: "0" }}>
+    <>
+      <ProjectHeader
+        teamName="teamName"
+        projectName={projectName}
+        fileName={selectedMenu}
+        code={code}
+      />
+      <div className="projectPage">
+        {fileList.length > 0 && (
+          <Directory
+            paths={fileList}
+            setCode={setCode}
+            getCode={getCode}
+            selectedMenu={selectedMenu}
+            setSelectedMenu={setSelectedMenu}
+          />
+        )}
+        {/* <div className="code-editor" style={{ height: "100%", padding: "0" }}>
         <div className="topFrameBetween">
           <h4>{selectedMenu}</h4>
           <button className="miniButton" style={{ background: "#FF7A00", color: "#FFFFFF"}} onClick={openCodeEditor}>Code Editor</button>
@@ -89,8 +110,25 @@ function ProjectPage() {
         <pre className="code-editor__present" style={{ padding: "0" }}>
           <code style={{ padding: "0" }}>{code}</code>
         </pre>
+      </div> */}
+        {selectedMenu !== "" && (
+        <Editor
+          language={language}
+          defaultValue=""
+          value={code}
+          theme="vs-dark"
+          options={{
+            minimap: { enabled: false },
+            fontSize: 14,
+            wordWrap: "on",
+            scrollBeyondLastLine: false,
+            automaticLayout: true,
+            readOnly: true,
+          }}
+        />
+        )}
       </div>
-    </div>
+    </>
   );
 }
 
