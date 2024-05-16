@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
 import Editor, { useMonaco } from "@monaco-editor/react";
-import * as monaco_editor from 'monaco-editor';
+import * as monaco_editor from "monaco-editor";
 import tomorrowTheme from "monaco-themes/themes/Tomorrow-Night.json";
 import SockJS from "sockjs-client";
 import * as StompJs from "@stomp/stompjs";
@@ -15,7 +15,7 @@ import Header from "./Components/Header";
 
 const MonacoEditor = () => {
   useBeforeunload((event) => event.preventDefault());
-//   const monaco = useMonaco();
+  //   const monaco = useMonaco();
   const [cursorStart, setCursorStart] = useState(0);
   const [cursorEnd, setCursorEnd] = useState(0);
   const [users, setUsers] = useState(["이현", "준형", "규민"]);
@@ -30,6 +30,7 @@ const MonacoEditor = () => {
   const [cursor, setCursor] = useState(0);
   const [code, setCode] = useState("");
   const [language, setLanguage] = useState("javascript");
+  const [lineNumber, setLineNumber] = useState(0);
 
   const client = useRef();
   //   let { editorId, teamName, commitId, projectName } = useParams();
@@ -47,7 +48,7 @@ const MonacoEditor = () => {
     java: "java",
     cpp: "cpp",
     c: "c",
-    py: "python"
+    py: "python",
   };
 
   function handleEditorDidMount(editor, monaco) {
@@ -55,6 +56,16 @@ const MonacoEditor = () => {
     // you can store it in `useRef` for further usage
     editorRef.current = editor;
   }
+
+  //   function  handlerEditorWillMount ( monaco )  {
+  //     // 여기에 모나코 인스턴스가 있습니다.
+  //     // 편집기가 마운트되기 전에 뭔가를 합니다
+  //     monaco.editor.defineTheme(
+  //         'tomorrow-night',
+  //         tomorrowTheme
+  //       );
+  //     monaco.editor.setTheme('tomorrow-night');
+  //   }
 
   /**
    * Socket
@@ -74,7 +85,7 @@ const MonacoEditor = () => {
         `/snapshot/${teamName}/${projectName}?fileName=` + fileName
       );
 
-      setLanguage(languageList[fileName.split(".")[1]] || 'javascript');
+      setLanguage(languageList[fileName.split(".")[1]] || "javascript");
       setCode(res.data);
       setFileName(fileName);
       subscribe(fileName);
@@ -126,7 +137,7 @@ const MonacoEditor = () => {
     client.current.activate();
   };
 
-  const publish = (inputCode) => {
+  const publish = (inputCode, type) => {
     if (!client.current.connected) return;
 
     client.current.publish({
@@ -168,10 +179,36 @@ const MonacoEditor = () => {
   };
 
   const handleEditorChange = (value, e) => {
+    const currentLine = editorRef.current.getPosition().lineNumber - 1;
+    const lineValue = editorRef.current.getModel().getLineContent(currentLine+1);
 
-    console.log(editorRef.current.getPosition());
+    setCurrentLine(currentLine);
+
+    const deletedLines = e.changes
+      .filter(
+        (change) => change.text === "" && 
+        change.range.startLineNumber !== change.range.endLineNumber
+      )
+      .map((change) => change.range.startLineNumber);
+
+    console.log(e.changes);
+
+    setType("update");
+
+    if (e.changes[0].text === "\n") {
+      setType("create");
+      publish("", "create");
+      console.log("추가된 라인:", currentLine);
+    } else if (deletedLines.length > 0) {
+      // 삭제된 라인이 있음
+      console.log("삭제된 라인:", deletedLines);
+      setType("delete");
+      publish("", "delete");
+    } else {
+        publish(lineValue, "update");
+    }
+
     setCode(value);
-    //editorRef.current.setPosition(new monaco_editor.Position(1, 1));
   };
 
   const searchCurrentLine = (start, end) => {
@@ -262,9 +299,9 @@ const MonacoEditor = () => {
             onChange={handleEditorChange}
             onMount={handleEditorDidMount}
             theme="vs-dark"
-            onKeydown={(e) =>
-              searchCurrentLine(e.target.selectionStart, e.target.selectionEnd)
-            }
+            // onKeydown={(e) =>
+            //   searchCurrentLine(e.target.selectionStart, e.target.selectionEnd)
+            // }
             options={{
               minimap: { enabled: false },
               fontSize: 18,
