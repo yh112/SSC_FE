@@ -31,6 +31,7 @@ const MonacoEditor = () => {
   const [code, setCode] = useState("");
   const [language, setLanguage] = useState("javascript");
   const [lineNumber, setLineNumber] = useState(0);
+  const [nickname, setNickname] = useState("");
 
   const client = useRef();
   //   let { editorId, teamName, commitId, projectName } = useParams();
@@ -72,12 +73,23 @@ const MonacoEditor = () => {
    */
   useEffect(() => {
     connect();
-    //updateUsers()
+    getNickname();
 
     if (commitId > 0) {
     }
+
     return () => disconnect();
   }, []);
+
+  async function getNickname() {
+    try {
+      const res = await API.get("/user/nickname");
+
+      setNickname(res.data);
+    } catch (error) {
+      console.error("error" + error);
+    }
+  }
 
   async function getCode(fileName) {
     try {
@@ -137,20 +149,19 @@ const MonacoEditor = () => {
     client.current.activate();
   };
 
-  const publish = (inputCode, type) => {
+  const publish = (inputCode, currentLine, type) => {
     if (!client.current.connected) return;
 
     client.current.publish({
       destination: "/app/message",
       body: JSON.stringify({
+        nickname: nickname,
         teamName: teamName,
         projectName: projectName,
         code: inputCode,
         line: currentLine, //현재 수정 중인 라인
         start: lineIndex.start, // 현재 수정 중인 라인의 시작점
         end: lineIndex.end, // 현재 수정 중인 라인의 끝
-        cursorStart: cursorStart,
-        cursorEnd: cursorEnd,
         fileName: fileName,
         updateType: type, //update, delete, create
       }),
@@ -167,8 +178,11 @@ const MonacoEditor = () => {
       `/subscribe/notice/${teamName}/${fileName}`,
       (body) => {
         const json_body = JSON.parse(body.body);
-
-        setCursor(json_body.cursorStart);
+        if(json_body.nickname !== nickname) {
+          setLineContent(json_body.line + 1, json_body.code);
+        }
+        //setCode(json_body.code);
+        //setCursor(json_body.cursorStart);
         // changeCode(json_body.code, false);
       }
     );
@@ -178,11 +192,41 @@ const MonacoEditor = () => {
     client.current.deactivate();
   };
 
+  function setLineContent(lineNumber, newText) {
+    const model = editorRef.current.getModel();
+
+    if (!model) {
+        console.error('모델이 없습니다.');
+        return;
+    }
+
+    // 라인의 현재 내용을 가져옴
+    const lineContent = model.getLineContent(lineNumber);
+    const startColumn = 1;
+    const endColumn = lineContent.length + 1;
+
+    if(newText === lineContent) {
+      return;
+    }
+
+    // 편집 내용을 설명하는 객체를 만듦
+    const edit = {
+        range: new monaco_editor.Range(lineNumber, startColumn, lineNumber, endColumn),
+        text: newText,
+        forceMoveMarkers: true
+    };
+
+    // 모델에 편집 내용을 적용
+    model.applyEdits([edit]);
+    console.log(edit);
+}
+
+
   const handleEditorChange = (value, e) => {
     const currentLine = editorRef.current.getPosition().lineNumber - 1;
     const lineValue = editorRef.current.getModel().getLineContent(currentLine+1);
 
-    setCurrentLine(currentLine);
+    //setCurrentLine(currentLine);
 
     const deletedLines = e.changes
       .filter(
@@ -191,24 +235,24 @@ const MonacoEditor = () => {
       )
       .map((change) => change.range.startLineNumber);
 
-    console.log(e.changes);
+    //console.log(e.changes);
 
     setType("update");
 
     if (e.changes[0].text === "\n") {
       setType("create");
-      publish("", "create");
+      publish("", currentLine, "create");
       console.log("추가된 라인:", currentLine);
     } else if (deletedLines.length > 0) {
       // 삭제된 라인이 있음
       console.log("삭제된 라인:", deletedLines);
       setType("delete");
-      publish("", "delete");
+      publish("",currentLine, "delete");
     } else {
-        publish(lineValue, "update");
+        publish(lineValue, currentLine, "update");
     }
 
-    setCode(value);
+    //setCode(value);
   };
 
   const searchCurrentLine = (start, end) => {
