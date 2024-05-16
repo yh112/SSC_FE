@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
 import Editor, { useMonaco } from "@monaco-editor/react";
-import * as monaco from 'monaco-editor';
+import * as monaco_editor from 'monaco-editor';
 import tomorrowTheme from "monaco-themes/themes/Tomorrow-Night.json";
 import SockJS from "sockjs-client";
 import * as StompJs from "@stomp/stompjs";
@@ -39,12 +39,22 @@ const MonacoEditor = () => {
 
   const editorRef = useRef(null);
 
+  const languageList = {
+    jsx: "javascript",
+    js: "javascript",
+    tsx: "typescript",
+    ts: "typescript",
+    java: "java",
+    cpp: "cpp",
+    c: "c",
+    py: "python"
+  };
+
   function handleEditorDidMount(editor, monaco) {
     // here is the editor instance
     // you can store it in `useRef` for further usage
     editorRef.current = editor;
   }
-
 
   /**
    * Socket
@@ -64,7 +74,7 @@ const MonacoEditor = () => {
         `/snapshot/${teamName}/${projectName}?fileName=` + fileName
       );
 
-      setLanguage(fileName.split(".")[1]);
+      setLanguage(languageList[fileName.split(".")[1]] || 'javascript');
       setCode(res.data);
       setFileName(fileName);
       subscribe(fileName);
@@ -158,11 +168,10 @@ const MonacoEditor = () => {
   };
 
   const handleEditorChange = (value, e) => {
-    // console.log(e);
-    console.log(e.changes);
+
+    console.log(editorRef.current.getPosition());
     setCode(value);
-    // console.log(editorRef.current.getRange(1));
-    // console.log(value);
+    //editorRef.current.setPosition(new monaco_editor.Position(1, 1));
   };
 
   const searchCurrentLine = (start, end) => {
@@ -247,7 +256,7 @@ const MonacoEditor = () => {
           )}
 
           <Editor
-            defaultLanguage={language}
+            language={language}
             defaultValue=""
             value={code}
             onChange={handleEditorChange}
