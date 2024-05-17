@@ -98,14 +98,14 @@ const CodeEditor = () => {
   // TODO: 카프카
   const connect = () => {
     client.current = new StompJs.Client({
-      brokerURL: "ws://localhost:8080/stomp",
+      brokerURL: "wss://server.sit-hub.com/stomp",
       onConnect: () => {
         subscribe();
       },
     });
 
     client.current.webSocketFactory = function () {
-      return new SockJS("http://localhost:8080/stomp");
+      return new SockJS("https://server.sit-hub.com/stomp");
     };
 
     client.current.activate();
