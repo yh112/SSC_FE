@@ -29,7 +29,7 @@ function SignUp() {
 
   const navigate = useNavigate();
   const handleSignUp = () => {
-    API.post("/login/register", {
+    API.post("/user/register", {
       userId: String(userInfo.userId),
       password: String(userInfo.password),
       nickname: String(userInfo.nickname),
