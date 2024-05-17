@@ -163,7 +163,7 @@ const MonacoEditor = () => {
       (body) => {
         const json_body = JSON.parse(body.body);
         if (json_body.nickname !== nickname) {
-          setLineContent(json_body.line + 1, json_body.code);
+          setLineContent(json_body.line + 1, json_body.code, json_body.updateType);
         }
       }
     );
@@ -173,7 +173,7 @@ const MonacoEditor = () => {
     client.current.deactivate();
   };
 
-  function setLineContent(lineNumber, newText) {
+  function setLineContent(lineNumber, newText, type) {
     const model = editorRef.current.getModel();
 
     if (!model) {
@@ -185,22 +185,49 @@ const MonacoEditor = () => {
     const lineContent = model.getLineContent(lineNumber);
     const startColumn = 1;
     const endColumn = lineContent.length + 1;
+    let edit = {};
+
+    console.log(type);
 
     if (newText === lineContent) {
       return;
     }
 
-    // 편집 내용을 설명하는 객체를 만듦
-    const edit = {
-      range: new monaco_editor.Range(
-        lineNumber,
-        startColumn,
-        lineNumber,
-        endColumn
-      ),
-      text: newText,
-      forceMoveMarkers: true,
-    };
+    if (type === "delete") {
+      edit = {
+        range: new monaco_editor.Range(
+          lineNumber,
+          startColumn,
+          lineNumber + 1,
+          endColumn
+        ),
+        text: "",
+        forceMoveMarkers: false,
+      };
+    } else if (type === "create") {
+      edit = {
+        range: new monaco_editor.Range(
+          lineNumber + 1,
+          startColumn,
+          lineNumber + 1,
+          endColumn
+        ),
+        text: newText,
+        forceMoveMarkers: false,
+      };
+    } else {
+      // 편집 내용을 설명하는 객체를 만듦
+      edit = {
+        range: new monaco_editor.Range(
+          lineNumber,
+          startColumn,
+          lineNumber,
+          endColumn
+        ),
+        text: newText,
+        forceMoveMarkers: false,
+      };
+    }
 
     // 모델에 편집 내용을 적용
     model.applyEdits([edit]);
@@ -228,7 +255,7 @@ const MonacoEditor = () => {
     if (e.changes[0].text === "\n") {
       publish("", currentLine, "create");
       console.log("추가된 라인:", currentLine + 1);
-    } else if (deletedLines.length > 0) {ㄴ
+    } else if (deletedLines.length > 0) {
       // 삭제된 라인이 있음
       console.log("삭제된 라인:", deletedLines);
       publish("", deletedLines, "delete");
