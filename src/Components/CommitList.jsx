@@ -1,44 +1,52 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  VerticalTimeline,
+  VerticalTimelineElement,
+} from "react-vertical-timeline-component";
+import "react-vertical-timeline-component/style.min.css";
+import moment from "moment";
+import "moment/locale/ko";
+function CommitList({ commitList, teamName, projectName, isOpened }) {
 
-function CommitList({ commitList }) {
-  const [openIndex, setOpenIndex] = useState(null);
-
-  const openComment = (index) => {
-    console.log("openComment", index);
-    return () => setOpenIndex(index);
-  };
-
-  const closeComment = () => {
-    setOpenIndex(null);
-  };
-
-  const openDirectories = (index) => {
-    //TODO: 백엔드에서 해당 커밋의 디렉토리 정보를 가져와야 합니다.
-    console.log("openDirectories", index);
-  };
-
+  let navigate = useNavigate();
+  
   return (
     <div>
-      <div style={{position: "relative"}} className="commitList">
-        {commitList.map((commit, index) => (
-          <div key={index}>
-            {openIndex === index && (
-              <p onClick={openDirectories} style={{ position: "absolute", color: "blue", margin: "0px", marginLeft: "10px", backgroundColor: "beige" }}>{commit}</p>
-            )}
-            <div
-              onClick={openDirectories(index)}
-              onMouseOver={openComment(index)}
-              //onMouseOut={closeComment}
-              style={{
-                height: "30px",
-                width: "30px",
-                backgroundColor: "black",
-                marginLeft: "10px",
-              }}
-            ></div>
-          </div>
-        ))}
-      </div>
+      {isOpened && (
+            <VerticalTimeline className="timeline">
+              {commitList?.map((item, index) => (
+                <VerticalTimelineElement
+                  key={index}
+                  date={moment(item.createDate).format("YYYY-MM-DD HH:MM")}
+                  dateClassName="dateClass"
+                  iconStyle={{ background: "#FF7A00", color: "#000" }}
+                  contentStyle={{ background: "#FF7A00", color: "#000" }}
+                  contentArrowStyle={{ borderRight: `7px solid #FF7A00` }}
+                  position="right"
+                >
+                  <h3 className="vertical-timeline-element-title">
+                    {teamName}
+                  </h3>
+                  <h4
+                    className="vertical-timeline-element-subtitle"
+                    style={{ opacity: "60%" }}
+                  >
+                    {projectName}
+                  </h4>
+                  <p>#{item.comment}</p>
+                  <button
+                    className="clickBtn"
+                    onClick={() =>
+                      navigate(`/${teamName}/${projectName}/${item.manageId}`)
+                    }
+                  >
+                    view code
+                  </button>
+                </VerticalTimelineElement>
+              ))}
+            </VerticalTimeline>
+          )}
     </div>
   );
 }

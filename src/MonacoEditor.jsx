@@ -26,6 +26,7 @@ const MonacoEditor = () => {
   const [code, setCode] = useState("");
   const [language, setLanguage] = useState("javascript");
   const [nickname, setNickname] = useState("");
+  const isApplyingEdits = useRef(false);
 
   const client = useRef();
   let { editorId, teamName, commitId, projectName } = useParams();
@@ -128,7 +129,7 @@ const MonacoEditor = () => {
   const connect = () => {
     client.current = new StompJs.Client({
       //   brokerURL: "wss://server.sit-hub.com/stomp",
-      brokerURL: "ws://localhost:8080/stomp",
+      brokerURL: process.env.REACT_APP_BROKERURL,
       onConnect: () => {
         subscribe();
       },
@@ -136,14 +137,15 @@ const MonacoEditor = () => {
 
     client.current.webSocketFactory = function () {
       //   return new SockJS("https://server.sit-hub.com/stomp");
-      return new SockJS("http://localhost:8080/stomp");
+      return new SockJS(process.env.REACT_APP_SOCKJSURL);
     };
 
     client.current.activate();
   };
 
-  const publish = (inputCode, currentLine, type) => {
+  const publish = (inputCode, currentLine, type, cursorStart, cursorEnd) => {
     if (!client.current.connected) return;
+    console.log("pub: ", cursorStart, cursorEnd);
 
     client.current.publish({
       destination: "/app/message",
@@ -153,6 +155,8 @@ const MonacoEditor = () => {
         projectName: projectName,
         code: inputCode,
         line: currentLine, //현재 수정 중인 라인
+        start: cursorStart,
+        end: cursorEnd,
         fileName: fileName,
         updateType: type, //update, delete, create
       }),
@@ -164,9 +168,9 @@ const MonacoEditor = () => {
       `/subscribe/notice/${teamName}/${fileName}`,
       (body) => {
         const json_body = JSON.parse(body.body);
-        console.log(json_body);
         if (json_body.nickname !== nickname) {
-          setLineContent(json_body.line + 1, json_body.code, json_body.type);
+          console.log(json_body);
+          setLineContent(json_body.line + 1, json_body.code, json_body.type, json_body.cursorStart, json_body.cursorEnd);
         }
       }
     );
@@ -176,7 +180,7 @@ const MonacoEditor = () => {
     client.current.deactivate();
   };
 
-  function setLineContent(lineNumber, newText, type) {
+  function setLineContent(lineNumber, newText, type, cursorStart, cursorEnd) {
     const model = editorRef.current.getModel();
 
     if (!model) {
@@ -187,60 +191,52 @@ const MonacoEditor = () => {
     // 라인의 현재 내용을 가져옴
     const lineContent = model.getLineContent(lineNumber);
     const lineCount = model.getLineCount();
-    const startColumn = 1;
-    const endColumn = lineContent.length + 1;
+    const startColumn = cursorStart;
+    const endColumn = cursorEnd;
     let edit = {};
-
-    console.log(type);
 
     // if (newText === lineContent) {
     //   return;
     // }
 
+    isApplyingEdits.current = true; // Set the flag before making edits
+
     if (type === "delete") {
-        console.log()
+      if (lineNumber > 1) {
+        const prevLineContent = model.getLineContent(lineNumber - 1);
+        console.log(lineNumber, ": ", lineContent);
+        console.log(prevLineContent, lineContent);
+        edit = {
+          range: new monaco_editor.Range(
+            lineNumber - 1,
+            prevLineContent.length,
+            lineNumber,
+            1
+          ),
+          text: prevLineContent.substring(0, prevLineContent.length - 1), // 이전 라인의 마지막 문자 제거
+          forceMoveMarkers: false,
+        };
+      }
+    } else if (type === "create") {
+      console.log(lineNumber, ": ", lineContent);
       edit = {
         range: new monaco_editor.Range(
-          lineNumber - 1,
-          endColumn - 1,
-          lineNumber - 1,
-          endColumn
+          lineNumber,
+          lineContent.length + 1,
+          lineNumber,
+          lineContent.length + 1
         ),
-        text: "",
+        text: "\n", // 현재 라인의 마지막에 개행 추가
         forceMoveMarkers: false,
       };
-    } else if (type === "create") {
-      console.log("create");
-      edit = {
-        range: new monaco_editor.Range(lineNumber, endColumn + 1, lineNumber, endColumn + 1),
-        text: "\n", // 새로운 라인 텍스트와 줄 바꿈 문자 추가
-      };
-      //   edit = {
-      //     range: new monaco_editor.Range(
-      //       lineNumber + 1,
-      //       startColumn,
-      //       lineNumber + 1,
-      //       endColumn
-      //     ),
-      //     text: newText,
-      //     forceMoveMarkers: false,
-      //   };
-    //   const text =
-    //     Array(lineNumber - lineCount)
-    //       .fill("\n")
-    //       .join("") + newText;
-    //   edit = { edit, text, forceMoveMarkers: false };
-      // const text = model.getValue() + newText;
-      // console.log(text);
-      // setCode(text);
     } else {
-      // 편집 내용을 설명하는 객체를 만듦
+      // 기본적인 텍스트 업데이트
       edit = {
         range: new monaco_editor.Range(
           lineNumber,
-          startColumn,
+          1,
           lineNumber,
-          endColumn
+          lineContent.length + 1
         ),
         text: newText,
         forceMoveMarkers: false,
@@ -249,10 +245,13 @@ const MonacoEditor = () => {
 
     // 모델에 편집 내용을 적용
     model.applyEdits([edit]);
-    console.log(edit);
+    isApplyingEdits.current = false; // Reset the flag after making edits
   }
 
   const handleEditorChange = (value, e) => {
+    if (isApplyingEdits.current) return; // Exit if this change is from applying edits programmatically
+    console.log(value, e)
+
     const currentLine = editorRef.current.getPosition().lineNumber - 1;
     const lineValue = editorRef.current
       .getModel()
@@ -261,24 +260,31 @@ const MonacoEditor = () => {
     //setCurrentLine(currentLine);
 
     const deletedLines = e.changes
-      .filter(
-        (change) =>
-          change.text === "" &&
-          change.range.startLineNumber !== change.range.endLineNumber
-      )
-      .map((change) => change.range.startLineNumber);
+    .filter(
+      (change) =>
+        change.text === "" &&
+        (change.range.startLineNumber !== change.range.endLineNumber)
+    )
+    .flatMap((change) => {
+      const lines = [];
+      for (let i = change.range.startLineNumber; i <= change.range.endLineNumber; i++) {
+        lines.push(i);
+      }
+      return lines;
+    });
+  
 
     //console.log(e.changes);
 
     if (e.changes[0].text === "\n") {
-      publish("", currentLine, "create");
+      publish("", currentLine, "create", e.changes[0].range.startColumn, e.changes[0].range.endColumn);
       console.log("추가된 라인:", currentLine + 1);
     } else if (deletedLines.length > 0) {
       // 삭제된 라인이 있음
-      console.log("삭제된 라인:", deletedLines);
-      publish("", deletedLines, "delete");
+      console.log("삭제된 라인:", deletedLines[0] + 1);
+      publish("", deletedLines[0] + 1, "delete", e.changes[0].range.startColumn, e.changes[0].range.endColumn);
     } else {
-      publish(lineValue, currentLine, "update");
+      publish(lineValue, currentLine, "update", e.changes[0].range.startColumn, e.changes[0].range.endColumn);
     }
 
     //setCode(value);

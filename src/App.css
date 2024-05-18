@@ -433,4 +433,79 @@ textarea {
   height: 100vh;
   background: #0d1117;
 }
+
+.profile-nickname {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: white;
+  font-size: 40px;
+  font-weight: bold;
+  margin: 20px 0px;
+}
+
+.project-list {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
+
+  background: #1e1e1e;
+  width: 100vw;
+  height: 100vh;
+  /* gap: 80px; */
+  overflow: auto;
+  background-attachment: fixed;
+}
+
+.selectBox {
+  position: relative;
+  width: 150px;
+  height: 35px;
+  /* border: 1px solid; */
+  margin: 10px 10px;
+  border-radius: 4px;
+  outline: none;
+  border: none;
+}
+
+.selectBox .select {
+  width: inherit;
+  height: inherit;
+  background: #FF7A00;
+  border: 0 none;
+  outline: 0 none;
+  padding: 0 5px;
+  position: relative;
+  z-index: 3;
+  font-size: 16px;
+  font-weight: bold;
+  border-radius: 4px;
+}
+
+.selectBox .select option {
+  background: lightcoral;
+  color: #fff;
+  padding: 3px 0;
+  font-size: 16px;
+}
+
+.main-header {
+  height: 40px;
+  display: flex;
+  justify-content: space-between;
+  background: #272727;
+  border-bottom: rgba(191, 191, 191, 0.5) 0.5px solid;
+  color: #FFFFFF;
+  gap: 10px;
+  align-items: center;
+  padding-left: 20px;
+  padding-right: 20px;
+}
+
+.buttons {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  gap: 10px;
+}
 @media (prefers-reduced-motion: no-preference) {}

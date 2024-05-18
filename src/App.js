@@ -11,6 +11,7 @@ import ProjectPage from "./ProjectPage";
 import MonacoEditor from "./MonacoEditor";
 import './index.css';
 import './App.css';
+import MainPage from "./MainPage";
 
 function App() {
   return (
@@ -26,6 +27,7 @@ function App() {
           commitId != 0 -> 이전에 올린 커밋 불러와서 쉐어  */}
           {/* <Route path="/test/:teamName/:projectName/:commitId" element={<CodeEditor/>}/> */}
           <Route path="/scm" element={<Scm/>} />
+          <Route path="/main" element={<MainPage />}/>
           <Route path="/team/:teamName" element={<TeamPage/>} />
           <Route path="/:teamName/:projectName/:commitId" element={<ProjectPage/>} />
           <Route path="/editor/:teamName/:projectName/:commitId" element={<MonacoEditor/>} />

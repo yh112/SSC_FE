@@ -10,29 +10,6 @@ import API from "../BaseUrl";
 import { GoChevronUp, GoChevronDown } from "react-icons/go";
 
 const DragnDrop = ({ isOpened, setIsOpened, teamName, projectName, setFileList }) => {
-  AWS.config.update({
-    region: "ap-northeast-2",
-    accessKeyId: process.env.REACT_APP_S3_ACCESSKEY,
-    secretAccessKey: process.env.REACT_APP_S3_SECRETKEY,
-  });
-
-  const uploadToS3 = async (file, filePath) => {
-    const upload = new AWS.S3.ManagedUpload({
-      params: {
-        Bucket: "seumu-s3-bucket", // 버킷 이름
-        Key: filePath, // 파일 이름
-        Body: file, // 파일 객체
-      },
-    });
-
-    const promise = upload.promise();
-
-    promise.then((data) => {
-      console.log(data);
-      //setImageURL(data.Location);
-    });
-  };
-
   const [totalTag, setTotalTag] = useState();
 
   const traverseFileTree = async (item, path = "", formData) => {
