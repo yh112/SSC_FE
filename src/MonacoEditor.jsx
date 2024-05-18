@@ -130,6 +130,7 @@ const MonacoEditor = () => {
     client.current = new StompJs.Client({
       //   brokerURL: "wss://server.sit-hub.com/stomp",
       brokerURL: process.env.REACT_APP_BROKERURL,
+      // brokerURL: "ws://localhost:8080/stomp",
       onConnect: () => {
         subscribe();
       },
@@ -138,6 +139,7 @@ const MonacoEditor = () => {
     client.current.webSocketFactory = function () {
       //   return new SockJS("https://server.sit-hub.com/stomp");
       return new SockJS(process.env.REACT_APP_SOCKJSURL);
+      // return new SockJS("http://localhost:8080/stomp");
     };
 
     client.current.activate();

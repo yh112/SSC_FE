@@ -38,7 +38,7 @@ function Login() {
         console.log(response.data);
         if (response.data === "success") {
           console.log("로그인 성공");
-          navigate("/scm");
+          navigate("/main");
         } else {
           setLoginError(true);
           console.log("로그인 실패");

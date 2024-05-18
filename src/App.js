@@ -26,7 +26,7 @@ function App() {
           {/* commitId == 0 -> 새로운 프로젝트 쉐어
           commitId != 0 -> 이전에 올린 커밋 불러와서 쉐어  */}
           {/* <Route path="/test/:teamName/:projectName/:commitId" element={<CodeEditor/>}/> */}
-          <Route path="/scm" element={<Scm/>} />
+          {/* <Route path="/scm" element={<Scm/>} /> */}
           <Route path="/main" element={<MainPage />}/>
           <Route path="/team/:teamName" element={<TeamPage/>} />
           <Route path="/:teamName/:projectName/:commitId" element={<ProjectPage/>} />
