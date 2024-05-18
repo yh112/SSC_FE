@@ -127,14 +127,16 @@ const MonacoEditor = () => {
 
   const connect = () => {
     client.current = new StompJs.Client({
-      brokerURL: "wss://server.sit-hub.com/stomp",
+      //   brokerURL: "wss://server.sit-hub.com/stomp",
+      brokerURL: "ws://localhost:8080/stomp",
       onConnect: () => {
         subscribe();
       },
     });
 
     client.current.webSocketFactory = function () {
-      return new SockJS("https://server.sit-hub.com/stomp");
+      //   return new SockJS("https://server.sit-hub.com/stomp");
+      return new SockJS("http://localhost:8080/stomp");
     };
 
     client.current.activate();
@@ -162,8 +164,9 @@ const MonacoEditor = () => {
       `/subscribe/notice/${teamName}/${fileName}`,
       (body) => {
         const json_body = JSON.parse(body.body);
+        console.log(json_body);
         if (json_body.nickname !== nickname) {
-          setLineContent(json_body.line + 1, json_body.code, json_body.updateType);
+          setLineContent(json_body.line + 1, json_body.code, json_body.type);
         }
       }
     );
@@ -183,38 +186,53 @@ const MonacoEditor = () => {
 
     // 라인의 현재 내용을 가져옴
     const lineContent = model.getLineContent(lineNumber);
+    const lineCount = model.getLineCount();
     const startColumn = 1;
     const endColumn = lineContent.length + 1;
     let edit = {};
 
     console.log(type);
 
-    if (newText === lineContent) {
-      return;
-    }
+    // if (newText === lineContent) {
+    //   return;
+    // }
 
     if (type === "delete") {
+        console.log()
       edit = {
         range: new monaco_editor.Range(
-          lineNumber,
-          startColumn,
-          lineNumber + 1,
+          lineNumber - 1,
+          endColumn - 1,
+          lineNumber - 1,
           endColumn
         ),
         text: "",
         forceMoveMarkers: false,
       };
     } else if (type === "create") {
+      console.log("create");
       edit = {
-        range: new monaco_editor.Range(
-          lineNumber + 1,
-          startColumn,
-          lineNumber + 1,
-          endColumn
-        ),
-        text: newText,
-        forceMoveMarkers: false,
+        range: new monaco_editor.Range(lineNumber, endColumn + 1, lineNumber, endColumn + 1),
+        text: "\n", // 새로운 라인 텍스트와 줄 바꿈 문자 추가
       };
+      //   edit = {
+      //     range: new monaco_editor.Range(
+      //       lineNumber + 1,
+      //       startColumn,
+      //       lineNumber + 1,
+      //       endColumn
+      //     ),
+      //     text: newText,
+      //     forceMoveMarkers: false,
+      //   };
+    //   const text =
+    //     Array(lineNumber - lineCount)
+    //       .fill("\n")
+    //       .join("") + newText;
+    //   edit = { edit, text, forceMoveMarkers: false };
+      // const text = model.getValue() + newText;
+      // console.log(text);
+      // setCode(text);
     } else {
       // 편집 내용을 설명하는 객체를 만듦
       edit = {
