@@ -37,7 +37,7 @@ function SignUp() {
       console.log(response.data);
       if (response.data === "Success") {
         console.log("회원가입 성공");
-        navigate("/login");
+        navigate("/");
       } else {
         console.log("회원가입 실패");
       }

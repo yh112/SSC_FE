@@ -198,7 +198,6 @@ const MonacoEditor = () => {
 
     // 라인의 현재 내용을 가져옴
     const currentLine = lineNumber + 1;
-    const lineCount = model.getLineCount();
     const startColumn = cursorStart;
     const endColumn = cursorEnd;
     let edit = {};
@@ -225,18 +224,32 @@ const MonacoEditor = () => {
       }
     } else if (type === "create") {
       console.log(lineNumber, ": ");
-      if (startColumn > endColumn) {
-        edit = {
-          range: new monaco_editor.Range(lineNumber, startColumn, lineNumber, endColumn),
-          text: newText,
-          forceMoveMarkers: false,
-        };
+      console.log("value: ", newText);
+      const prevLineContent = model.getLineContent(lineNumber); // 이전 라인의 내용
+      const lineContent = model.getLineContent(currentLine);
+      if (newText.length > 1) {
+        const beforeText = newText[0] + "\n";
+        const afterText = newText[1];
+
+        // Create two edits: one for the line split and one for the remaining text
+        // edit = [
+          edit =
+          {
+            range: new monaco_editor.Range(
+              lineNumber,
+              1,
+              lineNumber,
+              prevLineContent.length + 1
+            ),
+            text: beforeText + afterText,
+            forceMoveMarkers: false,
+          };
       } else {
         edit = {
           range: new monaco_editor.Range(
-            lineNumber,
+            lineNumber + 1,
             startColumn + 1,
-            lineNumber,
+            lineNumber + 1,
             endColumn + 1
           ),
           text: "\n", // 현재 라인의 마지막에 개행 추가
@@ -253,20 +266,27 @@ const MonacoEditor = () => {
           currentLine,
           lineContent.length + 1
         ),
-        text: newText,
+        text: newText[0],
         forceMoveMarkers: false,
       };
     }
-
+    console.log("edit: ", edit);
     // 모델에 편집 내용을 적용
-    model.applyEdits([edit]);
+    if (Array.isArray(edit)) {
+      model.applyEdits(edit);
+    } else {
+      model.applyEdits([edit]);
+    }
+
     isApplyingEdits.current = false; // Reset the flag after making edits
   }
 
   const handleEditorChange = (value, e) => {
     if (isApplyingEdits.current) return;
+    console.log(e.changes[0]);
 
     const currentLine = editorRef.current.getPosition().lineNumber - 1;
+    console.log("현재 라인: ", currentLine);
     const lineValue = editorRef.current
       .getModel()
       .getLineContent(currentLine + 1);
@@ -289,30 +309,57 @@ const MonacoEditor = () => {
         return lines;
       });
 
-    //console.log(e.changes);
+    console.log("입력: ", e.changes);
 
-    if (e.changes[0].text === "\n") {
-      publish(
-        "",
-        currentLine - 1,
-        "create",
-        e.changes[0].range.startColumn,
-        e.changes[0].range.endColumn
-      );
+    if (e.changes[0].text.includes("\n")) {
+      // 기존 라인 중간에서 엔터를 누른 경우
+      const lineValue1 = editorRef.current
+        .getModel()
+        .getLineContent(currentLine);
+      const lineValue2 = editorRef.current
+        .getModel()
+        .getLineContent(currentLine + 1);
+      console.log("중간에서 엔터:", lineValue1, lineValue2);
+      if (
+        e.changes[0].range.startColumn <
+        lineValue1.length + lineValue2.length
+      ) {
+        const lineString = [lineValue1, lineValue2];
+        console.log(currentLine, "번째 줄 중간에서 엔터:", lineString);
+        publish(
+          lineString,
+          currentLine - 1,
+          "create",
+          e.changes[0].range.startColumn,
+          e.changes[0].range.endColumn
+        );
+      } else {
+        console.log("끝에 추가");
+        const lineString = [""];
+        publish(
+          lineString,
+          currentLine - 2,
+          "create",
+          e.changes[0].range.startColumn,
+          e.changes[0].range.endColumn
+        );
+      }
       console.log("추가된 라인:", currentLine);
     } else if (deletedLines.length > 0) {
       // 삭제된 라인이 있음
       console.log("삭제된 라인:", deletedLines[0]);
+      const lineString = [""];
       publish(
-        "",
+        lineString,
         deletedLines[0] - 1,
         "delete",
         e.changes[0].range.startColumn,
         e.changes[0].range.endColumn
       );
     } else {
+      const lineString = [lineValue];
       publish(
-        lineValue,
+        lineString,
         currentLine - 1,
         "update",
         e.changes[0].range.startColumn,
