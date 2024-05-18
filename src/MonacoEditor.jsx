@@ -129,8 +129,8 @@ const MonacoEditor = () => {
   const connect = () => {
     client.current = new StompJs.Client({
       //   brokerURL: "wss://server.sit-hub.com/stomp",
-      brokerURL: process.env.REACT_APP_BROKERURL,
-      // brokerURL: "ws://localhost:8080/stomp",
+      // brokerURL: process.env.REACT_APP_BROKERURL,
+      brokerURL: "ws://localhost:8080/stomp",
       onConnect: () => {
         subscribe();
       },
@@ -138,8 +138,8 @@ const MonacoEditor = () => {
 
     client.current.webSocketFactory = function () {
       //   return new SockJS("https://server.sit-hub.com/stomp");
-      return new SockJS(process.env.REACT_APP_SOCKJSURL);
-      // return new SockJS("http://localhost:8080/stomp");
+      // return new SockJS(process.env.REACT_APP_SOCKJSURL);
+      return new SockJS("http://localhost:8080/stomp");
     };
 
     client.current.activate();
@@ -172,7 +172,13 @@ const MonacoEditor = () => {
         const json_body = JSON.parse(body.body);
         if (json_body.nickname !== nickname) {
           console.log(json_body);
-          setLineContent(json_body.line + 1, json_body.code, json_body.type, json_body.cursorStart, json_body.cursorEnd);
+          setLineContent(
+            json_body.line + 1,
+            json_body.code,
+            json_body.type,
+            json_body.cursorStart,
+            json_body.cursorEnd
+          );
         }
       }
     );
@@ -191,7 +197,7 @@ const MonacoEditor = () => {
     }
 
     // 라인의 현재 내용을 가져옴
-    const lineContent = model.getLineContent(lineNumber);
+    const currentLine = lineNumber + 1;
     const lineCount = model.getLineCount();
     const startColumn = cursorStart;
     const endColumn = cursorEnd;
@@ -205,39 +211,46 @@ const MonacoEditor = () => {
 
     if (type === "delete") {
       if (lineNumber > 1) {
-        const prevLineContent = model.getLineContent(lineNumber - 1);
-        console.log(lineNumber, ": ", lineContent);
-        console.log(prevLineContent, lineContent);
+        const prevLineContent = model.getLineContent(lineNumber); // 이전 라인의 내용
         edit = {
           range: new monaco_editor.Range(
-            lineNumber - 1,
-            prevLineContent.length,
-            lineNumber,
+            lineNumber, // 이전 라인
+            prevLineContent.length + 1,
+            currentLine, // 현재 라인
             1
           ),
-          text: prevLineContent.substring(0, prevLineContent.length - 1), // 이전 라인의 마지막 문자 제거
+          text: "",
           forceMoveMarkers: false,
         };
       }
     } else if (type === "create") {
-      console.log(lineNumber, ": ", lineContent);
-      edit = {
-        range: new monaco_editor.Range(
-          lineNumber,
-          lineContent.length + 1,
-          lineNumber,
-          lineContent.length + 1
-        ),
-        text: "\n", // 현재 라인의 마지막에 개행 추가
-        forceMoveMarkers: false,
-      };
+      console.log(lineNumber, ": ");
+      if (startColumn > endColumn) {
+        edit = {
+          range: new monaco_editor.Range(lineNumber, startColumn, lineNumber, endColumn),
+          text: newText,
+          forceMoveMarkers: false,
+        };
+      } else {
+        edit = {
+          range: new monaco_editor.Range(
+            lineNumber,
+            startColumn + 1,
+            lineNumber,
+            endColumn + 1
+          ),
+          text: "\n", // 현재 라인의 마지막에 개행 추가
+          forceMoveMarkers: false,
+        };
+      }
     } else {
       // 기본적인 텍스트 업데이트
+      const lineContent = model.getLineContent(currentLine);
       edit = {
         range: new monaco_editor.Range(
-          lineNumber,
+          currentLine,
           1,
-          lineNumber,
+          currentLine,
           lineContent.length + 1
         ),
         text: newText,
@@ -251,42 +264,60 @@ const MonacoEditor = () => {
   }
 
   const handleEditorChange = (value, e) => {
-    if (isApplyingEdits.current) return; // Exit if this change is from applying edits programmatically
-    console.log(value, e)
+    if (isApplyingEdits.current) return;
 
     const currentLine = editorRef.current.getPosition().lineNumber - 1;
     const lineValue = editorRef.current
       .getModel()
       .getLineContent(currentLine + 1);
 
-    //setCurrentLine(currentLine);
-
     const deletedLines = e.changes
-    .filter(
-      (change) =>
-        change.text === "" &&
-        (change.range.startLineNumber !== change.range.endLineNumber)
-    )
-    .flatMap((change) => {
-      const lines = [];
-      for (let i = change.range.startLineNumber; i <= change.range.endLineNumber; i++) {
-        lines.push(i);
-      }
-      return lines;
-    });
-  
+      .filter(
+        (change) =>
+          change.text === "" &&
+          change.range.startLineNumber !== change.range.endLineNumber
+      )
+      .flatMap((change) => {
+        const lines = [];
+        for (
+          let i = change.range.startLineNumber;
+          i <= change.range.endLineNumber;
+          i++
+        ) {
+          lines.push(i);
+        }
+        return lines;
+      });
 
     //console.log(e.changes);
 
     if (e.changes[0].text === "\n") {
-      publish("", currentLine, "create", e.changes[0].range.startColumn, e.changes[0].range.endColumn);
-      console.log("추가된 라인:", currentLine + 1);
+      publish(
+        "",
+        currentLine - 1,
+        "create",
+        e.changes[0].range.startColumn,
+        e.changes[0].range.endColumn
+      );
+      console.log("추가된 라인:", currentLine);
     } else if (deletedLines.length > 0) {
       // 삭제된 라인이 있음
-      console.log("삭제된 라인:", deletedLines[0] + 1);
-      publish("", deletedLines[0] + 1, "delete", e.changes[0].range.startColumn, e.changes[0].range.endColumn);
+      console.log("삭제된 라인:", deletedLines[0]);
+      publish(
+        "",
+        deletedLines[0] - 1,
+        "delete",
+        e.changes[0].range.startColumn,
+        e.changes[0].range.endColumn
+      );
     } else {
-      publish(lineValue, currentLine, "update", e.changes[0].range.startColumn, e.changes[0].range.endColumn);
+      publish(
+        lineValue,
+        currentLine - 1,
+        "update",
+        e.changes[0].range.startColumn,
+        e.changes[0].range.endColumn
+      );
     }
 
     //setCode(value);
@@ -298,6 +329,7 @@ const MonacoEditor = () => {
         teamName={teamName}
         projectName={projectName}
         fileName={selectedMenu}
+        code={code}
         comment={"good"}
       />
       <div className="mainFrameRow" style={{ gap: "0" }}>

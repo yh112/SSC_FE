@@ -18,10 +18,21 @@ function Header({ teamName, projectName, fileName, comment, code }) {
     }
   }
 
-  async function complileCode() {
+  const compileCode = async () => {
     try {
-      console.log(code);
-      const res = await API.get(`/complie/runPython?code=` + code);
+      // FormData 객체 생성
+      const formData = new FormData();
+      formData.append("code", code); // 'code'라는 필드에 code 변수의 값을 추가
+
+      // console.log(code);
+
+      // axios 요청 보내기
+      const res = await API.post("/compile/runPython", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
       console.log(res.data);
     } catch (error) {
       console.error(error);
@@ -31,7 +42,7 @@ function Header({ teamName, projectName, fileName, comment, code }) {
   return (
     <div className="header">
       {fileName}
-      <VscDebugStart onClick={() => complileCode()} />
+      <VscDebugStart onClick={() => compileCode()} />
       <GoUpload onClick={() => uploadToS3()} />
       <GoPersonAdd />
       <GoX />

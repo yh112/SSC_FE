@@ -30,12 +30,12 @@ function SignUp() {
   const navigate = useNavigate();
   const handleSignUp = () => {
     API.post("/user/register", {
-      userId: String(userInfo.userId),
-      password: String(userInfo.password),
-      nickname: String(userInfo.nickname),
+      userId: userInfo.userId,
+      nickname: userInfo.nickname,
+      password: userInfo.password,
     }).then((response) => {
       console.log(response.data);
-      if (response.data === "success") {
+      if (response.data === "Success") {
         console.log("회원가입 성공");
         navigate("/login");
       } else {
