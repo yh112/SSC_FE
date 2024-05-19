@@ -11,6 +11,8 @@ import DragnDrop from "./Components/DragnDrop";
 import Directory from "./Components/Directory";
 import Participants from "./Components/Participants";
 import Header from "./Components/Header";
+import { edit } from "ace-builds";
+import { editor } from "monaco-editor";
 
 const MonacoEditor = () => {
   useBeforeunload((event) => event.preventDefault());
@@ -164,7 +166,7 @@ const MonacoEditor = () => {
         start: cursorStart,
         end: cursorEnd,
         fileName: fileName,
-        updateType: type, //update, delete, create
+        updateType: type, //update, delete, create, position
       }),
     });
   };
@@ -177,39 +179,47 @@ const MonacoEditor = () => {
         if (json_body.nickname !== nickname) {
           console.log(json_body);
           setLineContent(
-            json_body.line + 1,
+            json_body.line, // 프론트에선 1부터 시작하므로 +1
             json_body.code,
             json_body.type,
             json_body.cursorStart,
             json_body.cursorEnd
           );
 
-        // Update other user cursor position
-        setOtherUserCursors((prevCursors) => {
-          const existingCursorIndex = prevCursors.findIndex(cursor => cursor.nickname === json_body.nickname);
-          if (existingCursorIndex > -1) {
-            // Update existing cursor position
-            const updatedCursors = [...prevCursors];
-            updatedCursors[existingCursorIndex] = {
-              ...updatedCursors[existingCursorIndex],
-              position: new monaco_editor.Position(json_body.cursorLine, json_body.cursorColumn),
-            };
-            return updatedCursors;
-          } else {
-            // Add new cursor
-            return [
-              ...prevCursors,
-              {
-                nickname: json_body.nickname,
-                position: new monaco_editor.Position(json_body.cursorLine, json_body.cursorColumn),
-              }
-            ];
-          }
-        });
+          // Update other user cursor position
+          setOtherUserCursors((prevCursors) => {
+            const existingCursorIndex = prevCursors.findIndex(
+              (cursor) => cursor.nickname === json_body.nickname
+            );
+            if (existingCursorIndex > -1) {
+              // Update existing cursor position
+              const updatedCursors = [...prevCursors];
+              updatedCursors[existingCursorIndex] = {
+                ...updatedCursors[existingCursorIndex],
+                position: new monaco_editor.Position(
+                  json_body.cursorLine,
+                  json_body.cursorColumn
+                ),
+              };
+              return updatedCursors;
+            } else {
+              // Add new cursor
+              return [
+                ...prevCursors,
+                {
+                  nickname: json_body.nickname,
+                  position: new monaco_editor.Position(
+                    json_body.cursorLine,
+                    json_body.cursorColumn
+                  ),
+                },
+              ];
+            }
+          });
+        }
       }
-    }
-  );
-};
+    );
+  };
 
   const disconnect = () => {
     client.current.deactivate();
@@ -219,15 +229,20 @@ const MonacoEditor = () => {
   useEffect(() => {
     if (editorRef.current && otherUserCursors.length > 0) {
       const decorations = otherUserCursors.map((cursor) => ({
-        range: new monaco_editor.Range(cursor.position.lineNumber, cursor.position.column, cursor.position.lineNumber, cursor.position.column),
+        range: new monaco_editor.Range(
+          cursor.position.lineNumber,
+          cursor.position.column,
+          cursor.position.lineNumber,
+          cursor.position.column
+        ),
         options: {
-          className: 'other-user-cursor',
-          glyphMarginClassName: 'other-user-cursor-margin',
+          className: "other-user-cursor",
+          glyphMarginClassName: "other-user-cursor-margin",
           hoverMessage: { value: cursor.nickname },
           isWholeLine: false,
-        }
+        },
       }));
-      
+
       editorRef.current.deltaDecorations([], decorations);
     }
   }, [otherUserCursors]);
@@ -240,8 +255,7 @@ const MonacoEditor = () => {
       return;
     }
 
-    // 라인의 현재 내용을 가져옴
-    const currentLine = lineNumber + 1;
+    const currentLine = lineNumber + 1; // 프론트 원래 라인
     const startColumn = cursorStart;
     const endColumn = cursorEnd;
     let edit = {};
@@ -258,12 +272,12 @@ const MonacoEditor = () => {
         const lineValue = model.getLineContent(currentLine); // 현재 라인의 내용
         edit = {
           range: new monaco_editor.Range(
-            lineNumber, // 이전 라인
-            prevLineContent.length + 1,
-            currentLine, // 현재 라인
+            currentLine, // 이전 라인
+            lineValue.length + 1,
+            currentLine + 1, // 현재 라인
             1
           ),
-          text: lineValue,
+          text: "",
           forceMoveMarkers: false,
         };
       }
@@ -271,35 +285,44 @@ const MonacoEditor = () => {
       console.log(lineNumber, ": ");
       console.log("value: ", newText);
       const prevLineContent = model.getLineContent(lineNumber); // 이전 라인의 내용
-      const lineContent = model.getLineContent(currentLine);
-      if (newText.length > 1) {
+      const lineContent = model.getLineContent(currentLine); // 현재
+      if (newText.length + 1 > 1) {
+        // 중간 엔터
         const beforeText = newText[0] + "\n";
         const afterText = newText[1];
 
         // Create two edits: one for the line split and one for the remaining text
         // edit = [
-          edit =
-          {
-            range: new monaco_editor.Range(
-              lineNumber,
-              1,
-              lineNumber,
-              prevLineContent.length + 1
-            ),
-            text: beforeText + afterText,
-            forceMoveMarkers: false,
-          };
-      } else {
         edit = {
           range: new monaco_editor.Range(
-            lineNumber + 1,
-            startColumn + 1,
-            lineNumber + 1,
-            endColumn + 1
+            currentLine,
+            1,
+            currentLine,
+            prevLineContent.length + 1
           ),
-          text: "\n", // 현재 라인의 마지막에 개행 추가
+          text: beforeText + afterText,
           forceMoveMarkers: false,
         };
+      } else {
+        if (cursorStart === 1) {
+          // 앞에서 엔터
+          edit = {
+            range: new monaco_editor.Range(currentLine, 1, currentLine, 1),
+            text: "\n",
+            forceMoveMarkers: false,
+          };
+        } else {
+          edit = {
+            range: new monaco_editor.Range(
+              currentLine,
+              startColumn + 1,
+              currentLine,
+              endColumn + 1
+            ),
+            text: "\n", // 현재 라인의 마지막에 개행 추가
+            forceMoveMarkers: false,
+          };
+        }
       }
     } else {
       // 기본적인 텍스트 업데이트
@@ -329,8 +352,10 @@ const MonacoEditor = () => {
   const handleEditorChange = (value, e) => {
     if (isApplyingEdits.current) return;
 
-    const currentLine = editorRef.current.getPosition().lineNumber - 1; //백엔드로 보낼 때는 0부터 시작하는 인덱스로 보내야 해서 -1
-    console.log("현재 라인: ", currentLine); 
+    const currentLine = editorRef.current.getPosition().lineNumber;
+    console.log("현재 라인: ", currentLine);
+
+    // 라인 삭제 확인
     const deletedLines = e.changes
       .filter(
         (change) =>
@@ -349,19 +374,48 @@ const MonacoEditor = () => {
         return lines;
       });
 
+    // 엔터
     if (e.changes[0].text.includes("\n")) {
-      // 기존 라인 중간에서 엔터를 누른 경우
-      const lineValue1 = editorRef.current
-        .getModel()
-        .getLineContent(currentLine - 1);
-      const lineValue2 = editorRef.current
-        .getModel()
-        .getLineContent(currentLine);
-      console.log("중간에서 엔터:", lineValue1, lineValue2);
-      if (
-        e.changes[0].range.startColumn <
-        lineValue1.length + lineValue2.length
+      console.log(
+      );
+      // 라인의 처음에서 엔터를 누른 경우
+      if (e.changes[0].range.startColumn === 1) {
+        const lineValue = editorRef.current
+          .getModel()
+          .getLineContent(currentLine);
+        const lineString = [lineValue];
+        publish(
+          lineString,
+          currentLine - 1,
+          "create",
+          e.changes[0].range.startColumn,
+          e.changes[0].range.endColumn
+        );
+      }
+      // 라인 끝에서 엔터를 누른 경우
+      else if (
+        e.changes[0].range.endColumn ===
+        editorRef.current.getModel().getLineContent(currentLine - 1).length + 1
       ) {
+        console.log("라인 끝에 추가");
+        const lineString = [""];
+        publish(
+          lineString,
+          currentLine - 1,
+          "create",
+          e.changes[0].range.startColumn,
+          e.changes[0].range.endColumn
+        );
+      }
+      // 라인 중간에서 엔터를 누른 경우
+      else {
+        // 라인의 끝에서 엔터를 누른 경우
+        const lineValue1 = editorRef.current
+          .getModel()
+          .getLineContent(currentLine - 1);
+        const lineValue2 = editorRef.current
+          .getModel()
+          .getLineContent(currentLine);
         const lineString = [lineValue1, lineValue2];
         console.log(currentLine, "번째 줄 중간에서 엔터:", lineString);
         publish(
@@ -371,45 +425,41 @@ const MonacoEditor = () => {
           e.changes[0].range.startColumn,
           e.changes[0].range.endColumn
         );
-      } else {
-        console.log("끝에 추가");
-        const lineString = [""];
-        publish(
-          lineString,
-          currentLine - 2,
-          "create",
-          e.changes[0].range.startColumn,
-          e.changes[0].range.endColumn
-        );
       }
-      console.log("추가된 라인:", currentLine);
-    } else if (deletedLines.length > 0) {
+    }
+
+    // delete
+    else if (deletedLines.length > 0) {
       // 삭제된 라인이 있음
       console.log("삭제된 라인:", deletedLines[0]);
-      const lineString = [""];
-      publish(
-        lineString,
-        deletedLines[0],
-        "delete",
-        e.changes[0].range.startColumn,
-        e.changes[0].range.endColumn
-      );
-    } else {
       const lineValue = editorRef.current
         .getModel()
-        .getLineContent(currentLine+1);
-  
+        .getLineContent(currentLine - 1);
       const lineString = [lineValue];
       publish(
         lineString,
-        currentLine,
-        "update",
+        currentLine - 1,
+        "delete",
         e.changes[0].range.startColumn,
         e.changes[0].range.endColumn
       );
     }
 
-    //setCode(value);
+    // update
+    else {
+      const lineValue = editorRef.current
+        .getModel()
+        .getLineContent(currentLine);
+
+      const lineString = [lineValue];
+      publish(
+        lineString,
+        currentLine - 1,
+        "update",
+        e.changes[0].range.startColumn,
+        e.changes[0].range.endColumn
+      );
+    }
   };
 
   return (
