@@ -515,4 +515,15 @@ textarea {
   justify-content: center;
   gap: 10px;
 }
+
+.other-user-cursor {
+  border-left: 2px solid pink;
+  border-right: 2px solid pink;
+  background-color: rgba(255, 0, 0, 0.3);
+}
+
+.other-user-cursor-margin {
+  background: pink;
+}
+
 @media (prefers-reduced-motion: no-preference) {}
