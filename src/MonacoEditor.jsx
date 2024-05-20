@@ -86,9 +86,10 @@ const MonacoEditor = () => {
 
       setNickname(res.data);
       if (!users.includes(res.data)) {
-        setUsers([...users, res.data]);
+        setUsers([...users, res.data]); 
       }
       console.log(users);
+      console.log(res.data);
     } catch (error) {
       console.error("error" + error);
     }
@@ -196,7 +197,7 @@ const MonacoEditor = () => {
 
   const publish = (inputCode, currentLine, type, cursorStart, cursorEnd) => {
     if (!client.current.connected) return;
-    console.log("pub: ", cursorStart, cursorEnd);
+    console.log("pub: ", currentLine, type);
 
     client.current.publish({
       destination: "/app/message",
@@ -338,7 +339,7 @@ const MonacoEditor = () => {
       const prevLineContent = model.getLineContent(lineNumber); // 이전 라인의 내용
       let text;
 
-      if (model.getLineCount() < currentLine) {
+      if (model.getLineCount() < currentLine && newText.length < 3) {
         // 마지막 라인에 추가
         console.log("마지막 라인에 추가");
         text = newText[0] + "\n";
@@ -352,55 +353,60 @@ const MonacoEditor = () => {
           text: text,
           forceMoveMarkers: false,
         };
-      } else if (newText.length == 3) {
-        const lineValue = model.getLineContent(currentLine);
-        console.log("괄호: ", prevLineContent , lineValue);
-
-        text = newText[0] + "\n" + newText[1] + "\n" + newText[2];
-        edit = {
-          range: new monaco_editor.Range(
-            lineNumber,
-            1,
-            lineNumber,
-            prevLineContent.length + 1
-          ),
-          text: text,
-          forceMoveMarkers: false,
-        };
-      } else if (newText.length == 2) {
-        const lineValue = model.getLineContent(currentLine);
-        console.log("중간 엔터: ", lineValue);
-
-        text = newText[0] + "\n" + newText[1] + "\n";
-        edit = {
-          range: new monaco_editor.Range(
-            lineNumber,
-            1,
-            lineNumber,
-            prevLineContent.length + 1
-          ),
-          text: text,
-          forceMoveMarkers: false,
-        };
       } else {
-        console.log("enter");
-        text = newText[0] + "\n" + newText[1];
+        if (newText.length == 3) {
+          const lineValue = model.getLineContent(currentLine);
+          console.log("괄호: ", prevLineContent, lineValue);
 
-        // Create two edits: one for the line split and one for the remaining text
-        // edit = [
-        edit = {
-          range: new monaco_editor.Range(
-            lineNumber,
-            1,
-            lineNumber,
-            prevLineContent.length + 1
-          ),
-          text: text,
-          forceMoveMarkers: false,
-        };
+          text = newText[0] + "\n" + newText[1] + "\n" + newText[2];
+          edit = {
+            range: new monaco_editor.Range(
+              lineNumber,
+              1,
+              lineNumber,
+              prevLineContent.length + 1
+            ),
+            text: text,
+            forceMoveMarkers: false,
+          };
+        }
+        // else if (newText.length == 2) {
+        //   const lineValue = model.getLineContent(currentLine);
+        //   console.log("중간 엔터: ", lineValue);
+
+        //   text = newText[0] + "\n" + newText[1] + "\n";
+        //   edit = {
+        //     range: new monaco_editor.Range(
+        //       lineNumber,
+        //       1,
+        //       lineNumber,
+        //       prevLineContent.length + 1
+        //     ),
+        //     text: text,
+        //     forceMoveMarkers: false,
+        //   };
+        // }
+        else {
+          console.log("enter");
+          text = newText[0] + "\n" + newText[1];
+
+          // Create two edits: one for the line split and one for the remaining text
+          // edit = [
+          edit = {
+            range: new monaco_editor.Range(
+              lineNumber,
+              1,
+              lineNumber,
+              prevLineContent.length + 1
+            ),
+            text: text,
+            forceMoveMarkers: false,
+          };
+        }
       }
     } else {
       // 기본적인 텍스트 업데이트
+      console.log("업데이트");
       const lineValue = model.getLineContent(currentLine);
       edit = {
         range: new monaco_editor.Range(
@@ -414,13 +420,7 @@ const MonacoEditor = () => {
       };
     }
     console.log("edit: ", edit);
-    // 모델에 편집 내용을 적용
-    if (Array.isArray(edit)) {
-      model.applyEdits(edit);
-    } else {
-      model.applyEdits([edit]);
-    }
-
+    model.applyEdits([edit]);
     isApplyingEdits.current = false; // Reset the flag after making edits
   }
 
