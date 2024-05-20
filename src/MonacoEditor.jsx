@@ -170,18 +170,14 @@ const MonacoEditor = () => {
 
   const connect = () => {
     client.current = new StompJs.Client({
-      //   brokerURL: "wss://server.sit-hub.com/stomp",
-      // brokerURL: process.env.REACT_APP_BROKERURL,
-      brokerURL: "ws://localhost:8080/stomp",
+      brokerURL: process.env.REACT_APP_BROKERURL,
       onConnect: () => {
         subscribe();
       },
     });
 
     client.current.webSocketFactory = function () {
-      //   return new SockJS("https://server.sit-hub.com/stomp");
-      // return new SockJS(process.env.REACT_APP_SOCKJSURL);
-      return new SockJS("http://localhost:8080/stomp");
+      return new SockJS(process.env.REACT_APP_SOCKJSURL);
     };
 
     client.current.activate();
@@ -221,7 +217,7 @@ const MonacoEditor = () => {
             json_body.cursorStart,
             json_body.cursorEnd
           );
-          if(!users.includes(json_body.nickname)) setUsers([...users, json_body.nickname]);
+          if (!users.includes(json_body.nickname)) setUsers([...users, json_body.nickname]);
 
           // Update other user cursor position
           // setOtherUserCursors((prevCursors) => {
@@ -325,31 +321,14 @@ const MonacoEditor = () => {
         };
       }
     } else if (type === "create") {
-      console.log(lineNumber, ": ");
       console.log("value: ", newText);
+      console.log("lineCount:", model.getLineCount());
       const prevLineContent = model.getLineContent(lineNumber); // 이전 라인의 내용
       let text;
-      const lineContent = model.getLineContent(currentLine); // 현재
-      // 중간 엔터
-      if (newText.length >= 3) {
-        text = newText[0] + "\n" + newText[1] + "\n" + newText[2] + "\n";
-        edit = {
-          range: new monaco_editor.Range(
-            lineNumber,
-            1,
-            lineNumber + 1,
-            1
-          ),
-          text: text,
-          forceMoveMarkers: false,
-        };
 
-      } else {
-        console.log("enter");
+      if (model.getLineCount() < currentLine) {
         text = newText[0] + "\n" + newText[1];
 
-        // Create two edits: one for the line split and one for the remaining text
-        // edit = [
         edit = {
           range: new monaco_editor.Range(
             lineNumber,
@@ -360,7 +339,43 @@ const MonacoEditor = () => {
           text: text,
           forceMoveMarkers: false,
         };
+      } else {
+        const lineContent = model.getLineContent(currentLine); // 현재
+
+        // 중간 엔터
+        if (newText.length >= 3) {
+          text = newText[0] + "\n" + newText[1] + "\n" + newText[2] + "\n";
+          edit = {
+            range: new monaco_editor.Range(
+              lineNumber,
+              1,
+              lineNumber + 1,
+              1
+            ),
+            text: text,
+            forceMoveMarkers: false,
+          };
+
+        } else {
+          console.log("enter");
+          text = newText[0] + "\n" + newText[1];
+
+          // Create two edits: one for the line split and one for the remaining text
+          // edit = [
+          edit = {
+            range: new monaco_editor.Range(
+              lineNumber,
+              1,
+              lineNumber,
+              prevLineContent.length + 1
+            ),
+            text: text,
+            forceMoveMarkers: false,
+          };
+        }
       }
+
+
     } else {
       // 기본적인 텍스트 업데이트
       const lineContent = model.getLineContent(currentLine);
@@ -529,18 +544,18 @@ const MonacoEditor = () => {
         comment: comment,
       });
       console.log(res.data);
-        setModalOpened(false);
+      setModalOpened(false);
     } catch (error) {
       console.error(error);
     }
   }
 
-    // const addFile = async () => {
-    //   try {
-    //     const res = await API.post(``)
-    //   }
+  // const addFile = async () => {
+  //   try {
+  //     const res = await API.post(``)
+  //   }
 
-    // }
+  // }
 
 
   return (
@@ -552,7 +567,7 @@ const MonacoEditor = () => {
         projectName={projectName}
         fileName={selectedMenu}
         code={code}
-                setModalOpened={setModalOpened}
+        setModalOpened={setModalOpened}
       />
       <div className="mainFrameRow" style={{ gap: "0" }}>
         <div className="col">
@@ -570,7 +585,7 @@ const MonacoEditor = () => {
             ></Directory>
           )}
           {users.length != 0 && (
-          <Participants participants={users} isCollapsed={isCollapsed} />)}
+            <Participants participants={users} isCollapsed={isCollapsed} />)}
         </div>
         <div className="mainFrameCol" style={{ gap: "20px" }}>
           {!code.length > 0 && (

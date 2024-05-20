@@ -23,8 +23,10 @@ const MainHeader = ({
   const [fileList, setFileList] = useState([]);
 
   useEffect(() => {
+    if(teamName.length == 0 || projectName.length == 0) return;
+
     getSnapshotList();
-  }, [])
+  }, [teamName, projectName])
 
   async function getSnapshotList() {
     try {
