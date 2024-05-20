@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Menu,
   MenuItem,
@@ -35,6 +35,17 @@ const Directory = ({
   const [isFileAddOpened, setIsFileAddOpened] = useState(false);
   const [isFileDeleteOpened, setIsFileDeleteOpened] = useState(false);
 
+  const blockRender = useRef(true);
+
+  useEffect(() => {
+    if(blockRender.current) {
+      blockRender.current = false;
+      return;
+    }
+
+    setTree(buildTree(paths));
+  }, [paths])
+  
   // 파일 경로를 기반으로 트리를 생성하는 함수
   function buildTree(paths) {
     const treeData = { Files: {} };
@@ -115,7 +126,7 @@ const Directory = ({
                     <input onKeyDown={
                       (e) => {
                         if (e.key === "Enter") {
-                          createFile(e.target.value, fullPath);
+                          createFile(fullPath + "/" + e.target.value);
                           setAddState((addState) => ({
                             ...addState,
                             [fullPath]: false,

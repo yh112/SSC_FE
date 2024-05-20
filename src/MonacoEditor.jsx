@@ -147,8 +147,18 @@ const MonacoEditor = () => {
     alert("파일을 삭제하시겠습니까?");
   };
 
-  const createFile = (fileName) => {
-    alert(fileName);
+  const createFile = async (fileName) => {
+    try {
+      const res = await API.post(`/snapshot/create`, {
+        roomId: teamName,
+        projectName: projectName,
+        fileName: fileName
+      });
+      console.log(fileName);
+      getSnapshotList();
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   const updateUsers = () => {
