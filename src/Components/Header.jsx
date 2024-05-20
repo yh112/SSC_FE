@@ -4,7 +4,7 @@ import { GoUpload, GoX, GoPersonAdd } from "react-icons/go";
 import { VscDebugStart } from "react-icons/vsc";
 import API from "../BaseUrl";
 
-function Header({ teamName, projectName, fileName, code, setModalOpened }) {
+function Header({ teamName, projectName, fileName, code, setModalOpened, setCompileResult, language }) {
 
   const compileCode = async () => {
     try {
@@ -20,7 +20,7 @@ function Header({ teamName, projectName, fileName, code, setModalOpened }) {
           "Content-Type": "multipart/form-data",
         },
       });
-
+      setCompileResult(res.data);
       console.log(res.data);
     } catch (error) {
       console.error(error);
@@ -34,7 +34,9 @@ function Header({ teamName, projectName, fileName, code, setModalOpened }) {
         {fileName}
       </div>
       <div className="buttons">
-      <VscDebugStart onClick={() => compileCode()} />
+        { language == "py" && (
+          <VscDebugStart onClick={() => compileCode()} />
+        )}
       <GoUpload onClick={() => setModalOpened(true)} />
       <GoPersonAdd />
       <GoX onClick={() => navigate(-1) }/>
