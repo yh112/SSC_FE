@@ -75,7 +75,6 @@ const MonacoEditor = () => {
     } else if (commitId > 0) {
       getCommitSnapshot();
     } else if (commitId == "new") {
-
     }
 
     return () => disconnect();
@@ -86,7 +85,9 @@ const MonacoEditor = () => {
       const res = await API.get("/user/nickname");
 
       setNickname(res.data);
-      setUsers([...users, res.data]);
+      if (!users.includes(res.data)) {
+        setUsers([...users, res.data]);
+      }
       console.log(users);
     } catch (error) {
       console.error("error" + error);
@@ -108,7 +109,7 @@ const MonacoEditor = () => {
       const res = await API.post(`/snapshot/change`, {
         commitId: commitId,
         teamName: teamName,
-        projectName: projectName
+        projectName: projectName,
       });
 
       setFileList(res.data);
@@ -152,7 +153,7 @@ const MonacoEditor = () => {
       const res = await API.post(`/snapshot/create`, {
         roomId: teamName,
         projectName: projectName,
-        fileName: fileName
+        fileName: fileName,
       });
       console.log(fileName);
       getSnapshotList();
@@ -227,7 +228,9 @@ const MonacoEditor = () => {
             json_body.cursorStart,
             json_body.cursorEnd
           );
-          if (!users.includes(json_body.nickname)) setUsers([...users, json_body.nickname]);
+          if (!users.includes(json_body.nickname)) {
+            setUsers([...users, json_body.nickname]);
+          }
 
           // Update other user cursor position
           // setOtherUserCursors((prevCursors) => {
@@ -293,7 +296,7 @@ const MonacoEditor = () => {
   const splitString = (text) => {
     console.log("복사해줄게 ㅋㅋ");
     // return text.split('\n');
-  }
+  };
 
   function setLineContent(lineNumber, newText, type, cursorStart, cursorEnd) {
     const model = editorRef.current.getModel();
@@ -318,8 +321,7 @@ const MonacoEditor = () => {
       if (lineNumber > 1) {
         const prevLineContent = model.getLineContent(lineNumber); // 이전 라인의 내용
         const lineValue = model.getLineContent(currentLine); // 현재 라인의 내용
-        edit =
-        {
+        edit = {
           range: new monaco_editor.Range(
             lineNumber,
             1,
@@ -337,8 +339,39 @@ const MonacoEditor = () => {
       let text;
 
       if (model.getLineCount() < currentLine) {
-        text = newText[0] + "\n" + newText[1];
+        // 마지막 라인에 추가
+        console.log("마지막 라인에 추가");
+        text = newText[0] + "\n";
+        edit = {
+          range: new monaco_editor.Range(
+            lineNumber,
+            1,
+            lineNumber,
+            prevLineContent.length + 1
+          ),
+          text: text,
+          forceMoveMarkers: false,
+        };
+      } else if (newText.length == 3) {
+        const lineValue = model.getLineContent(currentLine);
+        console.log("괄호: ", prevLineContent , lineValue);
 
+        text = newText[0] + "\n" + newText[1] + "\n" + newText[2];
+        edit = {
+          range: new monaco_editor.Range(
+            lineNumber,
+            1,
+            lineNumber,
+            prevLineContent.length + 1
+          ),
+          text: text,
+          forceMoveMarkers: false,
+        };
+      } else if (newText.length == 2) {
+        const lineValue = model.getLineContent(currentLine);
+        console.log("중간 엔터: ", lineValue);
+
+        text = newText[0] + "\n" + newText[1] + "\n";
         edit = {
           range: new monaco_editor.Range(
             lineNumber,
@@ -350,51 +383,31 @@ const MonacoEditor = () => {
           forceMoveMarkers: false,
         };
       } else {
-        const lineContent = model.getLineContent(currentLine); // 현재
+        console.log("enter");
+        text = newText[0] + "\n" + newText[1];
 
-        // 중간 엔터
-        if (newText.length >= 3) {
-          text = newText[0] + "\n" + newText[1] + "\n" + newText[2] + "\n";
-          edit = {
-            range: new monaco_editor.Range(
-              lineNumber,
-              1,
-              lineNumber + 1,
-              1
-            ),
-            text: text,
-            forceMoveMarkers: false,
-          };
-
-        } else {
-          console.log("enter");
-          text = newText[0] + "\n" + newText[1];
-
-          // Create two edits: one for the line split and one for the remaining text
-          // edit = [
-          edit = {
-            range: new monaco_editor.Range(
-              lineNumber,
-              1,
-              lineNumber,
-              prevLineContent.length + 1
-            ),
-            text: text,
-            forceMoveMarkers: false,
-          };
-        }
+        // Create two edits: one for the line split and one for the remaining text
+        // edit = [
+        edit = {
+          range: new monaco_editor.Range(
+            lineNumber,
+            1,
+            lineNumber,
+            prevLineContent.length + 1
+          ),
+          text: text,
+          forceMoveMarkers: false,
+        };
       }
-
-
     } else {
       // 기본적인 텍스트 업데이트
-      const lineContent = model.getLineContent(currentLine);
+      const lineValue = model.getLineContent(currentLine);
       edit = {
         range: new monaco_editor.Range(
           currentLine,
           1,
           currentLine,
-          lineContent.length + 1
+          lineValue.length + 1
         ),
         text: newText[0],
         forceMoveMarkers: false,
@@ -411,44 +424,67 @@ const MonacoEditor = () => {
     isApplyingEdits.current = false; // Reset the flag after making edits
   }
 
-  const findBracket = (code, line) => {
-    let bracketStack = [];
+  function checkAdjacentParentheses(text, lineNumber, cursorColumn) {
+    // 텍스트를 라인별로 분리
+    const lines = text.split("\n");
 
-    // 주어진 줄까지의 코드를 가져옵니다.
-    const codeUntilLine = code.split('\n').slice(0, line).join('\n');
+    // 현재 라인의 텍스트 가져오기
+    const currentLine = lines[lineNumber - 1];
 
-    // 코드의 처음부터 해당 줄까지의 문자열을 순회합니다.
-    for (let i = 0; i < codeUntilLine.length; i++) {
-      const char = codeUntilLine[i];
-
-      if (char === '{' || char === '[' || char === '(') {
-        bracketStack.push(char);
-      } else if (char === '}' || char === ']' || char === ')') {
-        const lastBracket = bracketStack.pop();
-        if (
-          (char === '}' && lastBracket !== '{') ||
-          (char === ']' && lastBracket !== '[') ||
-          (char === ')' && lastBracket !== '(')
-        ) {
-          // 불일치하는 괄호 발견
-          return false;
-        }
-      }
+    // 다음 두 줄이 있는지 확인
+    if (lines.length <= lineNumber) {
+      return false; // 다음 줄이 없으면 false 반환
     }
+    const lineAfterNext = lines[lineNumber + 1]; // 다다음 줄
 
-    // 모든 열린 괄호가 닫혔는지 확인합니다.
-    return bracketStack.length === 0;
-  };
+    // 커서 바로 앞 문자 가져오기
+    const beforeCursor = currentLine[cursorColumn - 2]; // 커서 바로 앞 문자
 
+    // 다다음 줄 첫 번째 문자 가져오기
+    const lastCharAfterNextLine = lineAfterNext
+      ? lineAfterNext[lineAfterNext.length - 1]
+      : "";
+    console.log(
+      "라인: ",
+      lines,
+      "커서: ",
+      cursorColumn,
+      "라인: ",
+      lineNumber,
+      "커서 앞: ",
+      beforeCursor,
+      "다다음 줄: ",
+      lineAfterNext,
+      "다다음 줄 첫 문자: ",
+      lastCharAfterNextLine
+    );
+
+    // 괄호 확인
+    if (
+      (beforeCursor === "(" && lastCharAfterNextLine === ")") ||
+      (beforeCursor === "[" && lastCharAfterNextLine === "]") ||
+      (beforeCursor === "{" && lastCharAfterNextLine === "}")
+    ) {
+      return true; // 커서 앞과 다다음 줄 첫 문자에 괄호가 있는 경우
+    } else {
+      return false; // 그렇지 않은 경우
+    }
+  }
 
   const handleEditorChange = (value, e) => {
     if (isApplyingEdits.current) return;
 
     const currentLine = editorRef.current.getPosition().lineNumber;
-    console.log("복붙해봐: ", e.changes[0].text, " 시작 위치: ", e.changes[0].range.startLineNumber, " 변경 끝난 위치: ", currentLine);
-    // bracket = e.changes[0].text === "{" || 
-    // 라인 삭제 확인
+    console.log(
+      "복붙해봐: ",
+      e.changes[0].text,
+      " 시작 위치: ",
+      e.changes[0].range.startLineNumber,
+      " 변경 끝난 위치: ",
+      currentLine
+    );
 
+    // 라인 삭제 확인
     const deletedLines = e.changes
       .filter(
         (change) =>
@@ -484,19 +520,24 @@ const MonacoEditor = () => {
       const prevLine = editorRef.current
         .getModel()
         .getLineContent(currentLine - 1);
-      const currentValue = editorRef.current.getModel().getLineContent(currentLine);
+      const currentValue = editorRef.current
+        .getModel()
+        .getLineContent(currentLine);
 
       lineString.push(prevLine, currentValue);
-      console.log("엔터: ", lineString);
-      // if (!findBracket(value, currentLine + 1)){
-      //   lineString.push(editorRef.current.getModel().getLineContent(currentLine + 1));
-      // }
-
-      if (prevLine.includes("(") || prevLine.includes("{") || prevLine.includes("[")) {
-        lineString.push(editorRef.current.getModel().getLineContent(currentLine + 1))
+      if (
+        checkAdjacentParentheses(
+          value,
+          currentLine - 1,
+          e.changes[0].range.startColumn
+        )
+      ) {
+        console.log("괄호가 있음");
+        lineString.push(
+          editorRef.current.getModel().getLineContent(currentLine + 1)
+        );
       }
 
-      console.log("괄호 엔터: ", lineString);
       publish(
         lineString,
         currentLine - 1,
@@ -567,10 +608,20 @@ const MonacoEditor = () => {
 
   // }
 
-
   return (
     <>
-      <Modal isOpen={modalOpened} setIsOpen={setModalOpened} addType={"Upload"} kr={"내용"} en={"comment"} value={comment} name={"comment"} active={active} onClick={uploadToS3} onChange={handleInputChange} />
+      <Modal
+        isOpen={modalOpened}
+        setIsOpen={setModalOpened}
+        addType={"Upload"}
+        kr={"내용"}
+        en={"comment"}
+        value={comment}
+        name={"comment"}
+        active={active}
+        onClick={uploadToS3}
+        onChange={handleInputChange}
+      />
 
       <Header
         teamName={teamName}
@@ -595,7 +646,8 @@ const MonacoEditor = () => {
             ></Directory>
           )}
           {users.length != 0 && (
-            <Participants participants={users} isCollapsed={isCollapsed} />)}
+            <Participants participants={users} isCollapsed={isCollapsed} />
+          )}
         </div>
         <div className="mainFrameCol" style={{ gap: "20px" }}>
           {!code.length > 0 && (
