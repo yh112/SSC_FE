@@ -11,12 +11,13 @@ import Editor from "@monaco-editor/react";
 //디렉토리 구조
 //파일 누르면 코드 보여주기
 function ProjectPage() {
-  const { projectName, commitId } = useParams();
+  const { teamName, projectName, commitId } = useParams();
   const [code, setCode] = useState("");
   // const [paths, setPaths] = useState([]);
   const [selectedMenu, setSelectedMenu] = useState("");
   const [fileList, setFileList] = useState([]);
   const [language, setLanguage] = useState("");
+  const [isCollapsed, setIsCollapsed] = useState(false)
 
   const languageList = {
     jsx: "javascript",
@@ -87,9 +88,10 @@ function ProjectPage() {
   return (
     <>
       <ProjectHeader
-        teamName="teamName"
+        teamName={teamName}
         projectName={projectName}
         fileName={selectedMenu}
+        manageId={commitId}
         code={code}
       />
       <div className="projectPage">
@@ -100,6 +102,8 @@ function ProjectPage() {
             getCode={getCode}
             selectedMenu={selectedMenu}
             setSelectedMenu={setSelectedMenu}
+            isCollapsed={isCollapsed}
+            setIsCollapsed={setIsCollapsed}
           />
         )}
         {/* <div className="code-editor" style={{ height: "100%", padding: "0" }}>

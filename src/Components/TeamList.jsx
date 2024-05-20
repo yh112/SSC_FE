@@ -1,8 +1,9 @@
 import React from "react";
 import { Menu, MenuItem, Sidebar, SubMenu, sidebarClasses, menuClasses } from "react-pro-sidebar";
 import { GoArchive } from "react-icons/go";
+import { RiTeamLine } from "react-icons/ri";
 
-const TeamList = ({ teamList, isCollapsed, setTeamName }) => {
+const TeamList = ({ label, teamList, isCollapsed, setTeamName }) => {
 
   return (
     <Sidebar collapsed={isCollapsed} rootStyles={{ border: 'none',
@@ -37,9 +38,9 @@ const TeamList = ({ teamList, isCollapsed, setTeamName }) => {
         },
       },
     }}>
-        <SubMenu label="Team" defaultOpen="true">
+        <SubMenu label={label} defaultOpen="true">
         {teamList?.map((team, index) => (
-          <MenuItem icon={<GoArchive/>} key={index} onClick={() => setTeamName(team)}>{team}</MenuItem>
+          <MenuItem icon={label == "Project" ? <GoArchive/> : <RiTeamLine/>} key={index} onClick={() => setTeamName(team)}>{team}</MenuItem>
         ))}
         </SubMenu>
     </Menu>

@@ -1,13 +1,11 @@
 import React from "react";
 import BackButton from "./BackButton";
-import { GoDownload, GoX, GoPersonAdd } from "react-icons/go";
+import { GoDownload, GoX, GoPersonAdd, GoShare } from "react-icons/go";
 import { VscDebugStart } from "react-icons/vsc";
 import API from "../BaseUrl";
 import { useNavigate } from "react-router-dom";
 
-function ProjectHeader({ teamName, projectName, fileName, code}) {
-  // 작업중인 파일 S3 업로드
-
+function ProjectHeader({ teamName, projectName, fileName, code, manageId}) {
   async function complileCode() {
     try {
       console.log(code);
@@ -25,6 +23,7 @@ function ProjectHeader({ teamName, projectName, fileName, code}) {
   return (
     <div className="header">
       {fileName}
+      <GoShare onClick={() => navigate(`/editor/${teamName}/${projectName}/${manageId}`)}/>
       <VscDebugStart onClick={() => complileCode()} />
       <GoDownload />
       <GoX onClick={() => handleBackBtn()} />

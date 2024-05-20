@@ -1,22 +1,10 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import { GoUpload, GoX, GoPersonAdd } from "react-icons/go";
 import { VscDebugStart } from "react-icons/vsc";
 import API from "../BaseUrl";
 
-function Header({ teamName, projectName, fileName, comment, code }) {
-  // 작업중인 파일 S3 업로드
-  async function uploadToS3() {
-    try {
-      const res = await API.post(`/s3/upload`, {
-        teamName: teamName,
-        projectName: projectName,
-        comment: comment,
-      });
-      console.log(res.data);
-    } catch (error) {
-      console.error(error);
-    }
-  }
+function Header({ teamName, projectName, fileName, code, setModalOpened }) {
 
   const compileCode = async () => {
     try {
@@ -38,14 +26,19 @@ function Header({ teamName, projectName, fileName, comment, code }) {
       console.error(error);
     }
   }
+  const navigate = useNavigate();
 
   return (
     <div className="header">
-      {fileName}
+      <div>
+        {fileName}
+      </div>
+      <div className="buttons">
       <VscDebugStart onClick={() => compileCode()} />
-      <GoUpload onClick={() => uploadToS3()} />
+      <GoUpload onClick={() => setModalOpened(true)} />
       <GoPersonAdd />
-      <GoX />
+      <GoX onClick={() => navigate(-1) }/>
+      </div>
     </div>
   );
 }

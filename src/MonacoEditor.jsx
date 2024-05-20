@@ -11,23 +11,28 @@ import DragnDrop from "./Components/DragnDrop";
 import Directory from "./Components/Directory";
 import Participants from "./Components/Participants";
 import Header from "./Components/Header";
+import Modal from "./Components/Modal";
 import { edit } from "ace-builds";
 import { editor } from "monaco-editor";
 
 const MonacoEditor = () => {
   useBeforeunload((event) => event.preventDefault());
   //   const monaco = useMonaco();
-  const [users, setUsers] = useState(["이현", "준형", "규민"]);
+  const [users, setUsers] = useState([]);
   const [fileList, setFileList] = useState([]);
   const [fileName, setFileName] = useState("");
   const [selectedMenu, setSelectedMenu] = useState("");
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isOpened, setIsOpened] = useState(true);
+  const [modalOpened, setModalOpened] = useState(false);
   const [lineIndex, setLineIndex] = useState([]);
   const [code, setCode] = useState("");
   const [language, setLanguage] = useState("javascript");
   const [nickname, setNickname] = useState("");
   const [otherUserCursors, setOtherUserCursors] = useState([]);
+  const [comment, setComment] = useState("");
+  const [active, setActive] = useState(false);
+  let bracket = 0;
 
   const isApplyingEdits = useRef(false);
 
@@ -65,7 +70,12 @@ const MonacoEditor = () => {
     connect();
     getNickname();
 
-    if (commitId > 0) {
+    if (commitId == "share") {
+      getSnapshotList();
+    } else if (commitId > 0) {
+      getCommitSnapshot();
+    } else if (commitId == "new") {
+
     }
 
     return () => disconnect();
@@ -76,8 +86,34 @@ const MonacoEditor = () => {
       const res = await API.get("/user/nickname");
 
       setNickname(res.data);
+      setUsers([...users, res.data]);
+      console.log(users);
     } catch (error) {
       console.error("error" + error);
+    }
+  }
+
+  async function getSnapshotList() {
+    try {
+      const res = await API.get(`/snapshot/list/${teamName}/${projectName}`);
+
+      setFileList(res.data);
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  async function getCommitSnapshot() {
+    try {
+      const res = await API.post(`/snapshot/change`, {
+        commitId: commitId,
+        teamName: teamName,
+        projectName: projectName
+      });
+
+      setFileList(res.data);
+    } catch (error) {
+      console.error(error);
     }
   }
 
@@ -185,37 +221,38 @@ const MonacoEditor = () => {
             json_body.cursorStart,
             json_body.cursorEnd
           );
+          if(!users.includes(json_body.nickname)) setUsers([...users, json_body.nickname]);
 
           // Update other user cursor position
-          setOtherUserCursors((prevCursors) => {
-            const existingCursorIndex = prevCursors.findIndex(
-              (cursor) => cursor.nickname === json_body.nickname
-            );
-            if (existingCursorIndex > -1) {
-              // Update existing cursor position
-              const updatedCursors = [...prevCursors];
-              updatedCursors[existingCursorIndex] = {
-                ...updatedCursors[existingCursorIndex],
-                position: new monaco_editor.Position(
-                  json_body.cursorLine,
-                  json_body.cursorColumn
-                ),
-              };
-              return updatedCursors;
-            } else {
-              // Add new cursor
-              return [
-                ...prevCursors,
-                {
-                  nickname: json_body.nickname,
-                  position: new monaco_editor.Position(
-                    json_body.cursorLine,
-                    json_body.cursorColumn
-                  ),
-                },
-              ];
-            }
-          });
+          // setOtherUserCursors((prevCursors) => {
+          //   const existingCursorIndex = prevCursors.findIndex(
+          //     (cursor) => cursor.nickname === json_body.nickname
+          //   );
+          //   if (existingCursorIndex > -1) {
+          //     // Update existing cursor position
+          //     const updatedCursors = [...prevCursors];
+          //     updatedCursors[existingCursorIndex] = {
+          //       ...updatedCursors[existingCursorIndex],
+          //       position: new monaco_editor.Position(
+          //         json_body.cursorLine,
+          //         json_body.cursorColumn
+          //       ),
+          //     };
+          //     return updatedCursors;
+          //   } else {
+          //     // Add new cursor
+          //     return [
+          //       ...prevCursors,
+          //       {
+          //         nickname: json_body.nickname,
+          //         position: new monaco_editor.Position(
+          //           json_body.cursorLine,
+          //           json_body.cursorColumn
+          //         ),
+          //       },
+          //     ];
+          //   }
+          // });
         }
       }
     );
@@ -247,6 +284,11 @@ const MonacoEditor = () => {
     }
   }, [otherUserCursors]);
 
+  const splitString = (text) => {
+    console.log("복사해줄게 ㅋㅋ");
+    // return text.split('\n');
+  }
+
   function setLineContent(lineNumber, newText, type, cursorStart, cursorEnd) {
     const model = editorRef.current.getModel();
 
@@ -270,14 +312,15 @@ const MonacoEditor = () => {
       if (lineNumber > 1) {
         const prevLineContent = model.getLineContent(lineNumber); // 이전 라인의 내용
         const lineValue = model.getLineContent(currentLine); // 현재 라인의 내용
-        edit = {
+        edit =
+        {
           range: new monaco_editor.Range(
-            currentLine, // 이전 라인
-            lineValue.length + 1,
-            currentLine + 1, // 현재 라인
-            1
+            lineNumber,
+            1,
+            lineNumber + 1,
+            lineValue.length + 1
           ),
-          text: "",
+          text: newText[0],
           forceMoveMarkers: false,
         };
       }
@@ -285,44 +328,38 @@ const MonacoEditor = () => {
       console.log(lineNumber, ": ");
       console.log("value: ", newText);
       const prevLineContent = model.getLineContent(lineNumber); // 이전 라인의 내용
+      let text;
       const lineContent = model.getLineContent(currentLine); // 현재
-      if (newText.length + 1 > 1) {
-        // 중간 엔터
-        const beforeText = newText[0] + "\n";
-        const afterText = newText[1];
+      // 중간 엔터
+      if (newText.length >= 3) {
+        text = newText[0] + "\n" + newText[1] + "\n" + newText[2] + "\n";
+        edit = {
+          range: new monaco_editor.Range(
+            lineNumber,
+            1,
+            lineNumber + 1,
+            1
+          ),
+          text: text,
+          forceMoveMarkers: false,
+        };
+
+      } else {
+        console.log("enter");
+        text = newText[0] + "\n" + newText[1];
 
         // Create two edits: one for the line split and one for the remaining text
         // edit = [
         edit = {
           range: new monaco_editor.Range(
-            currentLine,
+            lineNumber,
             1,
-            currentLine,
+            lineNumber,
             prevLineContent.length + 1
           ),
-          text: beforeText + afterText,
+          text: text,
           forceMoveMarkers: false,
         };
-      } else {
-        if (cursorStart === 1) {
-          // 앞에서 엔터
-          edit = {
-            range: new monaco_editor.Range(currentLine, 1, currentLine, 1),
-            text: "\n",
-            forceMoveMarkers: false,
-          };
-        } else {
-          edit = {
-            range: new monaco_editor.Range(
-              currentLine,
-              startColumn + 1,
-              currentLine,
-              endColumn + 1
-            ),
-            text: "\n", // 현재 라인의 마지막에 개행 추가
-            forceMoveMarkers: false,
-          };
-        }
       }
     } else {
       // 기본적인 텍스트 업데이트
@@ -349,13 +386,44 @@ const MonacoEditor = () => {
     isApplyingEdits.current = false; // Reset the flag after making edits
   }
 
+  const findBracket = (code, line) => {
+    let bracketStack = [];
+
+    // 주어진 줄까지의 코드를 가져옵니다.
+    const codeUntilLine = code.split('\n').slice(0, line).join('\n');
+
+    // 코드의 처음부터 해당 줄까지의 문자열을 순회합니다.
+    for (let i = 0; i < codeUntilLine.length; i++) {
+      const char = codeUntilLine[i];
+
+      if (char === '{' || char === '[' || char === '(') {
+        bracketStack.push(char);
+      } else if (char === '}' || char === ']' || char === ')') {
+        const lastBracket = bracketStack.pop();
+        if (
+          (char === '}' && lastBracket !== '{') ||
+          (char === ']' && lastBracket !== '[') ||
+          (char === ')' && lastBracket !== '(')
+        ) {
+          // 불일치하는 괄호 발견
+          return false;
+        }
+      }
+    }
+
+    // 모든 열린 괄호가 닫혔는지 확인합니다.
+    return bracketStack.length === 0;
+  };
+
+
   const handleEditorChange = (value, e) => {
     if (isApplyingEdits.current) return;
 
     const currentLine = editorRef.current.getPosition().lineNumber;
-    console.log("현재 라인: ", currentLine);
-
+    console.log("복붙해봐: ", e.changes[0].text, " 시작 위치: ", e.changes[0].range.startLineNumber, " 변경 끝난 위치: ", currentLine);
+    // bracket = e.changes[0].text === "{" || 
     // 라인 삭제 확인
+
     const deletedLines = e.changes
       .filter(
         (change) =>
@@ -373,72 +441,57 @@ const MonacoEditor = () => {
         }
         return lines;
       });
-
+    // const codeList = e.changes[0].text.split("\n");
+    // paste
+    // if (codeList.length > 2 && codeList[0].includes("\r")) {
+    //   console.log(codeList);
+    //   publish(
+    //     codeList,
+    //     currentLine - 1,
+    //     "paste",
+    //     e.changes[0].range.startColumn,
+    //     e.changes[0].range.endColumn
+    //   );
+    // }
     // 엔터
     if (e.changes[0].text.includes("\n")) {
-      console.log(
+      let lineString = [];
+      const prevLine = editorRef.current
+        .getModel()
+        .getLineContent(currentLine - 1);
+      const currentValue = editorRef.current.getModel().getLineContent(currentLine);
+
+      lineString.push(prevLine, currentValue);
+      console.log("엔터: ", lineString);
+      // if (!findBracket(value, currentLine + 1)){
+      //   lineString.push(editorRef.current.getModel().getLineContent(currentLine + 1));
+      // }
+
+      if (prevLine.includes("(") || prevLine.includes("{") || prevLine.includes("[")) {
+        lineString.push(editorRef.current.getModel().getLineContent(currentLine + 1))
+      }
+
+      console.log("괄호 엔터: ", lineString);
+      publish(
+        lineString,
+        currentLine - 1,
+        "create",
+        e.changes[0].range.startColumn,
+        e.changes[0].range.endColumn
       );
-      // 라인의 처음에서 엔터를 누른 경우
-      if (e.changes[0].range.startColumn === 1) {
-        const lineValue = editorRef.current
-          .getModel()
-          .getLineContent(currentLine);
-        const lineString = [lineValue];
-        publish(
-          lineString,
-          currentLine - 1,
-          "create",
-          e.changes[0].range.startColumn,
-          e.changes[0].range.endColumn
-        );
-      }
-      // 라인 끝에서 엔터를 누른 경우
-      else if (
-        e.changes[0].range.endColumn ===
-        editorRef.current.getModel().getLineContent(currentLine - 1).length + 1
-      ) {
-        console.log("라인 끝에 추가");
-        const lineString = [""];
-        publish(
-          lineString,
-          currentLine - 1,
-          "create",
-          e.changes[0].range.startColumn,
-          e.changes[0].range.endColumn
-        );
-      }
-      // 라인 중간에서 엔터를 누른 경우
-      else {
-        // 라인의 끝에서 엔터를 누른 경우
-        const lineValue1 = editorRef.current
-          .getModel()
-          .getLineContent(currentLine - 1);
-        const lineValue2 = editorRef.current
-          .getModel()
-          .getLineContent(currentLine);
-        const lineString = [lineValue1, lineValue2];
-        console.log(currentLine, "번째 줄 중간에서 엔터:", lineString);
-        publish(
-          lineString,
-          currentLine - 1,
-          "create",
-          e.changes[0].range.startColumn,
-          e.changes[0].range.endColumn
-        );
-      }
     }
 
     // delete
     else if (deletedLines.length > 0) {
       // 삭제된 라인이 있음
-      console.log("삭제된 라인:", deletedLines[0]);
+      console.log("삭제된 라인:", deletedLines);
       const lineValue = editorRef.current
         .getModel()
-        .getLineContent(currentLine - 1);
+        .getLineContent(currentLine);
       const lineString = [lineValue];
       publish(
         lineString,
-        currentLine - 1,
+        currentLine,
         "delete",
         e.changes[0].range.startColumn,
         e.changes[0].range.endColumn
@@ -462,14 +515,44 @@ const MonacoEditor = () => {
     }
   };
 
+  const handleInputChange = (e) => {
+    setComment(e.target.value);
+    comment === "" ? setActive(false) : setActive(true);
+  };
+
+  // 작업중인 파일 S3 업로드
+  async function uploadToS3() {
+    try {
+      const res = await API.post(`/s3/upload`, {
+        teamName: teamName,
+        projectName: projectName,
+        comment: comment,
+      });
+      console.log(res.data);
+        setModalOpened(false);
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+    // const addFile = async () => {
+    //   try {
+    //     const res = await API.post(``)
+    //   }
+
+    // }
+
+
   return (
     <>
+      <Modal isOpen={modalOpened} setIsOpen={setModalOpened} addType={"Upload"} kr={"내용"} en={"comment"} value={comment} name={"comment"} active={active} onClick={uploadToS3} onChange={handleInputChange} />
+
       <Header
         teamName={teamName}
         projectName={projectName}
         fileName={selectedMenu}
         code={code}
-        comment={"good"}
+                setModalOpened={setModalOpened}
       />
       <div className="mainFrameRow" style={{ gap: "0" }}>
         <div className="col">
@@ -486,7 +569,8 @@ const MonacoEditor = () => {
               setIsCollapsed={setIsCollapsed}
             ></Directory>
           )}
-          <Participants participants={users} isCollapsed={isCollapsed} />
+          {users.length != 0 && (
+          <Participants participants={users} isCollapsed={isCollapsed} />)}
         </div>
         <div className="mainFrameCol" style={{ gap: "20px" }}>
           {!code.length > 0 && (
@@ -502,6 +586,7 @@ const MonacoEditor = () => {
             language={language}
             defaultValue=""
             value={code}
+            onPaste={splitString}
             onChange={handleEditorChange}
             onMount={handleEditorDidMount}
             theme="vs-dark"

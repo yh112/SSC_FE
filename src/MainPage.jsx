@@ -181,29 +181,29 @@ function MainPage() {
           modalType === "team"
             ? "팀명"
             : modalType === "project"
-            ? "프로젝트명"
-            : "팀원명"
+              ? "프로젝트명"
+              : "팀원명"
         }
         en={
           modalType === "team"
             ? "Team Name"
             : modalType === "project"
-            ? "Project Name"
-            : "User Name"
+              ? "Project Name"
+              : "User Name"
         }
         value={
           modalType === "team"
             ? newTeamName
             : modalType === "project"
-            ? newProjectName
-            : newUserName
+              ? newProjectName
+              : newUserName
         }
         name={
           modalType === "team"
             ? "newTeamName"
             : modalType === "project"
-            ? "newProjectName"
-            : "newUserName"
+              ? "newProjectName"
+              : "newUserName"
         }
         active={active}
         onChange={handleInputChange}
@@ -211,9 +211,17 @@ function MainPage() {
           modalType === "team"
             ? addTeam
             : modalType === "project"
-            ? createProject
-            : addUser
+              ? createProject
+              : addUser
         }
+      />
+      <MainHeader
+        teamName={teamName}
+        setModalType={setModalType}
+        isOpened={isOpened}
+        setIsOpened={setIsOpened}
+        projectName={projectName}
+        
       />
       <div className="mainFrameRow" style={{ gap: "0" }}>
         <div className="col">
@@ -221,20 +229,13 @@ function MainPage() {
             teamName={teamName}
             nickname={nickname}
             teamList={teamList}
+            projectList={projectList}
+            setProjectName={setProjectName}
             participants={userList}
             setTeamName={setTeamName}
           />
         </div>
-        <div className="project-list" style={{ gap: "20px" }}>
-          <MainHeader
-            teamName={teamName}
-            projectList={projectList}
-            setProjectName={setProjectName}
-            setModalType={setModalType}
-            isOpened={isOpened}
-            setIsOpened={setIsOpened}
-            projectName={projectName}
-          />
+        <div className="project-list" style={{ gap: "20px", height: "100%" }}>
           <div className="project-element" >
             <CommitList
               isOpened={commitList.length != 0}
