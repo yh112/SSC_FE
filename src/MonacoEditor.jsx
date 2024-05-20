@@ -438,12 +438,14 @@ const MonacoEditor = () => {
     const lineAfterNext = lines[lineNumber + 1]; // 다다음 줄
 
     // 커서 바로 앞 문자 가져오기
-    const beforeCursor = currentLine[cursorColumn - 2]; // 커서 바로 앞 문자
+    const beforeCursor = currentLine[cursorColumn - 2] == "\r" ? currentLine[cursorColumn - 3]: currentLine[cursorColumn - 2]; // 커서 바로 앞 문자
 
     // 다다음 줄 첫 번째 문자 가져오기
-    const lastCharAfterNextLine = lineAfterNext
-      ? lineAfterNext[lineAfterNext.length - 1]
-      : "";
+    const lastCharAfterNextLine = lineAfterNext 
+    ? (lineAfterNext[lineAfterNext.length - 1] === "\r" 
+        ? lineAfterNext[lineAfterNext.length - 2] 
+        : lineAfterNext[lineAfterNext.length - 1]) 
+    : "";
     console.log(
       "라인: ",
       lines,
