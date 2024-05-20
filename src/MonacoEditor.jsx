@@ -32,7 +32,6 @@ const MonacoEditor = () => {
   const [otherUserCursors, setOtherUserCursors] = useState([]);
   const [comment, setComment] = useState("");
   const [active, setActive] = useState(false);
-  let bracket = 0;
 
   const isApplyingEdits = useRef(false);
 
@@ -181,6 +180,7 @@ const MonacoEditor = () => {
   //   }, [monaco]);
 
   const connect = () => {
+    console.log("connect");
     client.current = new StompJs.Client({
       brokerURL: process.env.REACT_APP_BROKERURL,
       onConnect: () => {
@@ -220,7 +220,7 @@ const MonacoEditor = () => {
       `/subscribe/notice/${teamName}/${fileName}`,
       (body) => {
         const json_body = JSON.parse(body.body);
-        if (json_body.nickname !== nickname) {
+        if (json_body.nickname != nickname) {
           console.log(json_body);
           setLineContent(
             json_body.line, // 프론트에선 1부터 시작하므로 +1
@@ -273,26 +273,26 @@ const MonacoEditor = () => {
   };
 
   // 다른 사용자의 커서 위치 변경
-  useEffect(() => {
-    if (editorRef.current && otherUserCursors.length > 0) {
-      const decorations = otherUserCursors.map((cursor) => ({
-        range: new monaco_editor.Range(
-          cursor.position.lineNumber,
-          cursor.position.column,
-          cursor.position.lineNumber,
-          cursor.position.column
-        ),
-        options: {
-          className: "other-user-cursor",
-          glyphMarginClassName: "other-user-cursor-margin",
-          hoverMessage: { value: cursor.nickname },
-          isWholeLine: false,
-        },
-      }));
+  // useEffect(() => {
+  //   if (editorRef.current && otherUserCursors.length > 0) {
+  //     const decorations = otherUserCursors.map((cursor) => ({
+  //       range: new monaco_editor.Range(
+  //         cursor.position.lineNumber,
+  //         cursor.position.column,
+  //         cursor.position.lineNumber,
+  //         cursor.position.column
+  //       ),
+  //       options: {
+  //         className: "other-user-cursor",
+  //         glyphMarginClassName: "other-user-cursor-margin",
+  //         hoverMessage: { value: cursor.nickname },
+  //         isWholeLine: false,
+  //       },
+  //     }));
 
-      editorRef.current.deltaDecorations([], decorations);
-    }
-  }, [otherUserCursors]);
+  //     editorRef.current.deltaDecorations([], decorations);
+  //   }
+  // }, [otherUserCursors]);
 
   const splitString = (text) => {
     console.log("복사해줄게 ㅋㅋ");
