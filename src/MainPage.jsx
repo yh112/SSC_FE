@@ -207,7 +207,7 @@ function MainPage() {
             ? "Team Name"
             : modalType === "project"
             ? "Project Name"
-            : "User Name"
+            : "Nickname"
         }
         value={
           modalType === "team"
