@@ -15,6 +15,7 @@ import Modal from "./Components/Modal";
 import CompileModal from "./Components/CompileModal";
 import { edit } from "ace-builds";
 import { editor } from "monaco-editor";
+import Nickname from "./Components/Nickname";
 
 const MonacoEditor = () => {
   useBeforeunload((event) => event.preventDefault());
@@ -37,6 +38,7 @@ const MonacoEditor = () => {
   const [compileResult, setCompileResult] = useState("");
   const [modalType, setModalType] = useState("upload");
   const [newUserName, setNewUserName] = useState("");
+  const cursorDecorations = useRef({});
 
   const isApplyingEdits = useRef(false);
   const pasteEvent = useRef(false);
@@ -93,7 +95,8 @@ const MonacoEditor = () => {
     // TODO: 여기 부분
     // monaco.languages.registerDefinitionProvider(language, "");
     editor.onDidChangeCursorPosition((e) => {
-      // console.log("커서 위치: ", e.position);
+      console.log("커서 위치: ", e.position);
+      // pubPosition(e.position);
       if (e.reason == 4) {
         pasteEvent.current = true;
       }
@@ -112,7 +115,9 @@ const MonacoEditor = () => {
    */
   useEffect(() => {
     connect();
-    getNickname();
+    if (nickname.length == 0) {
+      getNickname();
+    }
 
     if (commitId == "share") {
       getSnapshotList();
@@ -124,12 +129,24 @@ const MonacoEditor = () => {
     return () => disconnect();
   }, []);
 
+  // function pubPosition(position) {
+  //   console.log("position: ", position);
+  //   const code = [""];
+  //   publish(
+  //     code,
+  //     position.lineNumber,
+  //     "position",
+  //     position.column,
+  //     position.column,
+  //   );
+  // }
+
   async function getNickname() {
     try {
       const res = await API.get("/user/nickname");
 
       setNickname(res.data);
-      if (!users.includes(res.data)) {
+      if (users.includes(res.data) == false) {
         setUsers([...users, res.data]);
       }
     } catch (error) {
@@ -195,12 +212,10 @@ const MonacoEditor = () => {
     const deleteFileName = e.target.id;
     try {
       if (deleteType) {
-        const res = await API.post(
-          `/snapshot/remove`, {
-            roomId: teamName,
-            fileName: deleteFileName,
-          }
-        );
+        const res = await API.post(`/snapshot/remove`, {
+          roomId: teamName,
+          fileName: deleteFileName,
+        });
         getSnapshotList();
         setCode("");
       }
@@ -233,15 +248,7 @@ const MonacoEditor = () => {
       });
   };
 
-  //   useEffect(() => {
-  //     if (monaco) {
-  //       monaco.editor.defineTheme("tomorrow", tomorrowTheme);
-  //       monaco.editor.setTheme("tomorrow");
-  //     }
-  //   }, [monaco]);
-
   useEffect(() => {
-    console.log("컴파일 결과: ", compileResult);
     if (compileResult.length != 0) {
       setCompileModalOpened(true);
     }
@@ -270,7 +277,7 @@ const MonacoEditor = () => {
 
   const publish = (inputCode, currentLine, type, cursorStart, cursorEnd) => {
     if (!client.current.connected) return;
-    console.log("pub: ", inputCode, currentLine, type);
+    console.log("pub: ", nickname, inputCode, currentLine, type);
 
     client.current.publish({
       destination: "/app/message",
@@ -304,40 +311,42 @@ const MonacoEditor = () => {
             json_body.cursorStart,
             json_body.cursorEnd
           );
-          if (!users.includes(json_body.nickname)) {
+          if (users.includes(json_body.nickname) != true) {
             setUsers([...users, json_body.nickname]);
           }
 
           // Update other user cursor position
-          // setOtherUserCursors((prevCursors) => {
-          //   const existingCursorIndex = prevCursors.findIndex(
-          //     (cursor) => cursor.nickname === json_body.nickname
-          //   );
-          //   if (existingCursorIndex > -1) {
-          //     // Update existing cursor position
-          //     const updatedCursors = [...prevCursors];
-          //     updatedCursors[existingCursorIndex] = {
-          //       ...updatedCursors[existingCursorIndex],
-          //       position: new monaco_editor.Position(
-          //         json_body.cursorLine,
-          //         json_body.cursorColumn
-          //       ),
-          //     };
-          //     return updatedCursors;
-          //   } else {
-          //     // Add new cursor
-          //     return [
-          //       ...prevCursors,
-          //       {
-          //         nickname: json_body.nickname,
-          //         position: new monaco_editor.Position(
-          //           json_body.cursorLine,
-          //           json_body.cursorColumn
-          //         ),
-          //       },
-          //     ];
-          //   }
-          // });
+          setOtherUserCursors((prevCursors) => {
+            const existingCursorIndex = prevCursors.findIndex(
+              (cursor) => cursor.nickname === json_body.nickname
+            );
+            if (existingCursorIndex > -1) {
+              // Update existing cursor position
+              const updatedCursors = [...prevCursors];
+              updatedCursors[existingCursorIndex] = {
+                ...updatedCursors[existingCursorIndex],
+                position: new monaco_editor.Position(
+                  json_body.line + 1,
+                  json_body.cursorStart + 1,
+                ),
+                color: getUserColor(json_body.nickname)
+              };
+              return updatedCursors;
+            } else {
+              // Add new cursor
+              return [
+                ...prevCursors,
+                {
+                  nickname: json_body.nickname,
+                  position: new monaco_editor.Position(
+                    json_body.line + 1,
+                    json_body.cursorStart + 1.
+                  ),
+                  color: getUserColor(json_body.nickname)
+                },
+              ];
+            }
+          });
         }
       }
     );
@@ -348,26 +357,50 @@ const MonacoEditor = () => {
   };
 
   // 다른 사용자의 커서 위치 변경
-  // useEffect(() => {
-  //   if (editorRef.current && otherUserCursors.length > 0) {
-  //     const decorations = otherUserCursors.map((cursor) => ({
-  //       range: new monaco_editor.Range(
-  //         cursor.position.lineNumber,
-  //         cursor.position.column,
-  //         cursor.position.lineNumber,
-  //         cursor.position.column
-  //       ),
-  //       options: {
-  //         className: "other-user-cursor",
-  //         glyphMarginClassName: "other-user-cursor-margin",
-  //         hoverMessage: { value: cursor.nickname },
-  //         isWholeLine: false,
-  //       },
-  //     }));
+  useEffect(() => {
+    if (editorRef.current && otherUserCursors.length > 0) {
+      const editor = editorRef.current;
+      const decorations = cursorDecorations.current;
 
-  //     editorRef.current.deltaDecorations([], decorations);
-  //   }
-  // }, [otherUserCursors]);
+      otherUserCursors.forEach((cursor) => {
+        const userId = cursor.nickname;
+        const position = cursor.position;
+        const color = cursor.color;
+
+        if (decorations[userId]) {
+          editor.deltaDecorations(decorations[userId], []);
+        }
+
+        const newDecorations = editor.deltaDecorations([], [
+          {
+            range: new monaco_editor.Range(position.lineNumber, position.column, position.lineNumber, position.column),
+            options: {
+              className: `remote-cursor-${userId}`,
+              glyphMarginClassName: `remote-cursor-glyph-${userId}`,
+            },
+          },
+        ]);
+
+        decorations[userId] = newDecorations;
+
+        const styleSheet = document.styleSheets[0];
+        styleSheet.insertRule(`.remote-cursor-${userId} { border-left: 2px solid ${color}; }`, styleSheet.cssRules.length);
+        styleSheet.insertRule(`.remote-cursor-glyph-${userId} { background: ${color}; }`, styleSheet.cssRules.length);
+      });
+    }
+  }, [otherUserCursors]);
+
+  const getUserColor = (nickname) => {
+    // 해시 함수
+    let hash = 0;
+    for (let i = 0; i < nickname.length; i++) {
+      hash = nickname.charCodeAt(i) + ((hash << 5) - hash);
+    }
+  
+    // RGB 값 생성
+    const color = (hash & 0x00FFFFFF).toString(16).toUpperCase();
+    return "#" + "00000".substring(0, 6 - color.length) + color;
+  };
 
   function setLineContent(lineNumber, newText, type, cursorStart, cursorEnd) {
     const model = editorRef.current.getModel();
@@ -511,6 +544,27 @@ const MonacoEditor = () => {
     }
     console.log("edit: ", edit);
     model.applyEdits([edit]);
+    setOtherUserCursors((prevCursors) => {
+      const existingCursorIndex = prevCursors.findIndex(
+        (cursor) => cursor.nickname === nickname
+      );
+      if (existingCursorIndex > -1) {
+        const updatedCursors = [...prevCursors];
+        updatedCursors[existingCursorIndex] = {
+          ...updatedCursors[existingCursorIndex],
+          position: edit.range.getEndPosition() - 1,
+        };
+        return updatedCursors;
+      } else {
+        return [
+          ...prevCursors,
+          {
+            nickname: nickname,
+            position: edit.range.getEndPosition() - 1,
+          },
+        ];
+      }
+    });
     isApplyingEdits.current = false; // Reset the flag after making edits
   }
 
