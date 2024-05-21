@@ -32,9 +32,6 @@ const Directory = ({
 }) => {
   const [addState, setAddState] = useState({});
   const [tree, setTree] = useState(buildTree(paths));
-  const [isFileAddOpened, setIsFileAddOpened] = useState(false);
-  const [isFileDeleteOpened, setIsFileDeleteOpened] = useState(false);
-
   const blockRender = useRef(true);
 
   useEffect(() => {
@@ -146,9 +143,11 @@ const Directory = ({
             )
           ) : (
             <MenuItem
+              
               active={selectedMenu === key}
               icon={<GoFile />}
-              suffix={<GoTrash onClick={deleteFile} />}
+              suffix={<GoTrash 
+                onClick={(e) => deleteFile(e, childNode["path"])} />}
               onClick={() => getCode(childNode["path"])}
             >
               {key}

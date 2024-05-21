@@ -13,9 +13,6 @@ import Participants from "./Components/Participants";
 import Header from "./Components/Header";
 import Modal from "./Components/Modal";
 import CompileModal from "./Components/CompileModal";
-import { edit } from "ace-builds";
-import { editor } from "monaco-editor";
-import Nickname from "./Components/Nickname";
 
 const MonacoEditor = () => {
   useBeforeunload((event) => event.preventDefault());
@@ -44,6 +41,7 @@ const MonacoEditor = () => {
   const pasteEvent = useRef(false);
 
   const client = useRef();
+  const fileState = useRef();
   let { editorId, teamName, commitId, projectName } = useParams();
 
   const editorRef = useRef(null);
@@ -205,18 +203,19 @@ const MonacoEditor = () => {
     }
   }
 
-  const deleteFile = async (e) => {
+  const deleteFile = async (e, fileName) => {
     e.preventDefault();
     e.stopPropagation();
     const deleteType = window.confirm("정말로 삭제하시겠습니까?");
-    const deleteFileName = e.target.id;
     try {
       if (deleteType) {
         const res = await API.post(`/snapshot/remove`, {
           roomId: teamName,
-          fileName: deleteFileName,
+          projectName: projectName,
+          fileName: fileName,
         });
-        getSnapshotList();
+        
+        reloadPublish();
         setCode("");
       }
     } catch (error) {
@@ -232,7 +231,7 @@ const MonacoEditor = () => {
         fileName: fileName,
       });
 
-      getSnapshotList();
+      reloadPublish();
     } catch (error) {
       console.error(error);
     }
@@ -272,8 +271,31 @@ const MonacoEditor = () => {
       return new SockJS(process.env.REACT_APP_SOCKJSURL);
     };
 
+    fileState.current = new StompJs.Client({
+      brokerURL: process.env.REACT_APP_BROKERURL,
+      onConnect: () => {
+        console.log("file connect")
+        fileSubscribe();
+      }
+    })
+
+    fileState.current.webSocketFactory = function () {
+      return new SockJS(process.env.REACT_APP_SOCKJSURL);
+    };
+
     client.current.activate();
+    fileState.current.activate();
   };
+
+  const reloadPublish = () => {
+    fileState.current.publish({
+      destination: "/app/reload",
+      body: JSON.stringify({
+        teamName: teamName,
+        projectName: projectName
+      }),
+    });
+  }
 
   const publish = (inputCode, currentLine, type, cursorStart, cursorEnd) => {
     if (!client.current.connected) return;
@@ -296,6 +318,16 @@ const MonacoEditor = () => {
   };
   const [nowConnectFile, setNowConnectFile] = useState("");
   const subscribeState = useRef(null);
+
+  const fileSubscribe = () => {
+    fileState.current.subscribe(
+      `/subscribe/notice/${teamName}/${projectName}`,
+      (body) => {
+        console.log("reload subscribe");
+        getSnapshotList();
+      }
+    )
+  }
 
   const subscribe = (fileName) => {
     subscribeState.current = client.current.subscribe(
@@ -354,6 +386,7 @@ const MonacoEditor = () => {
 
   const disconnect = () => {
     client.current.deactivate();
+    //fileState.current.deactivate();
   };
 
   // 다른 사용자의 커서 위치 변경
@@ -837,7 +870,7 @@ const MonacoEditor = () => {
               // paths={paths}
               getCode={getCode}
               createFile={createFile}
-              deleteFile={(e) => deleteFile(e)}
+              deleteFile={deleteFile}
               selectedMenu={selectedMenu}
               setSelectedMenu={setSelectedMenu}
               isCollapsed={isCollapsed}
