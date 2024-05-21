@@ -157,10 +157,14 @@ function MainPage() {
         return;
       }
       const res = await API.post(`/team/create/${newTeamName}`);
-      if (res.status === 200) {
+      if (res.data === "success") {
         getTeamList();
         setNewTeamName("");
         setIsOpened(false);
+      } else {
+        alert("이미 존재하는 팀입니다.");
+        setNewTeamName("");
+        return;
       }
     } catch (err) {
       console.log(err);

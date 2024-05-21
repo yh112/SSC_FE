@@ -816,9 +816,12 @@ const MonacoEditor = () => {
   const addUser = async () => {
     try {
       const res = await API.post(`/team/${teamName}/add/${newUserName}`);
-      if (res.status === 200) {
+      if (res.data === "success") {
         setNewUserName("");
         setModalOpened(false);
+      } else {
+        alert("존재하지 않는 사용자입니다.");
+        setNewUserName("");
       }
     } catch (err) {
       console.log(err);
