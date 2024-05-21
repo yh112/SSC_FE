@@ -823,7 +823,7 @@ const MonacoEditor = () => {
         teamName={teamName}
         projectName={projectName}
         fileName={selectedMenu}
-        code={code}
+        code={editorRef.current ? editorRef.current.getValue() : ""}
         setModalOpened={setModalOpened}
         setCompileResult={setCompileResult}
         language={language}
