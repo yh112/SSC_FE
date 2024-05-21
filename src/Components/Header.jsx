@@ -4,7 +4,7 @@ import { GoUpload, GoX, GoPersonAdd } from "react-icons/go";
 import { VscDebugStart } from "react-icons/vsc";
 import API from "../BaseUrl";
 
-function Header({ teamName, projectName, fileName, code, setModalOpened, setCompileResult, language }) {
+function Header({ teamName, projectName, fileName, code, setModalOpened, setCompileResult, language, setModalType }) {
 
   const compileCode = async () => {
     try {
@@ -28,17 +28,19 @@ function Header({ teamName, projectName, fileName, code, setModalOpened, setComp
   }
   const navigate = useNavigate();
 
+  
+
   return (
     <div className="header">
       <div>
         {fileName}
       </div>
       <div className="buttons">
-        { language == "py" && (
+        { language == "python" && (
           <VscDebugStart onClick={() => compileCode()} />
         )}
-      <GoUpload onClick={() => setModalOpened(true)} />
-      <GoPersonAdd />
+      <GoUpload onClick={() => {setModalType("upload"); setModalOpened(true)}} />
+      {/* <GoPersonAdd onClick={() => {setModalType("user"); setModalOpened(true) } } /> */}
       <GoX onClick={() => navigate(-1) }/>
       </div>
     </div>

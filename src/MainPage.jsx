@@ -121,6 +121,11 @@ function MainPage() {
   // 새로운 프로젝트 생성
   async function createProject() {
     try {
+      if (projectList.includes(newProjectName) == true) {
+        alert("이미 존재하는 프로젝트입니다.");
+        setNewProjectName("");
+        return;
+      }
       const res = await API.post(`/team/${teamName}/create/${newProjectName}`);
       if (res.status === 200) {
         getProjectList(teamName);
@@ -144,22 +149,31 @@ function MainPage() {
     }
   };
 
-  const addTeam = () => {
-    console.log(newTeamName + " 생성중");
-    API.post(`/team/create/${newTeamName}`)
-      .then((res) => {
-        console.log(res);
+  const addTeam = async () => {
+    try {
+      if (teamList.includes(newTeamName) == true) {
+        alert("이미 존재하는 팀입니다.");
+        setNewTeamName("");
+        return;
+      }
+      const res = await API.post(`/team/create/${newTeamName}`);
+      if (res.status === 200) {
         getTeamList();
         setNewTeamName("");
         setIsOpened(false);
-      })
-      .catch((err) => {
-        console.log(err);
-      });
+      }
+    } catch (err) {
+      console.log(err);
+    }
   };
 
   const addUser = async () => {
     try {
+      if (userList.includes(newUserName) == true) {
+        alert("이미 존재하는 사용자입니다.");
+        setNewUserName("");
+        return;
+      }
       const res = await API.post(`/team/${teamName}/add/${newUserName}`);
       if (res.status === 200) {
         getUsers(teamName);
@@ -181,29 +195,29 @@ function MainPage() {
           modalType === "team"
             ? "팀명"
             : modalType === "project"
-              ? "프로젝트명"
-              : "팀원명"
+            ? "프로젝트명"
+            : "팀원명"
         }
         en={
           modalType === "team"
             ? "Team Name"
             : modalType === "project"
-              ? "Project Name"
-              : "User Name"
+            ? "Project Name"
+            : "User Name"
         }
         value={
           modalType === "team"
             ? newTeamName
             : modalType === "project"
-              ? newProjectName
-              : newUserName
+            ? newProjectName
+            : newUserName
         }
         name={
           modalType === "team"
             ? "newTeamName"
             : modalType === "project"
-              ? "newProjectName"
-              : "newUserName"
+            ? "newProjectName"
+            : "newUserName"
         }
         active={active}
         onChange={handleInputChange}
@@ -211,8 +225,8 @@ function MainPage() {
           modalType === "team"
             ? addTeam
             : modalType === "project"
-              ? createProject
-              : addUser
+            ? createProject
+            : addUser
         }
       />
       <MainHeader
@@ -221,7 +235,6 @@ function MainPage() {
         isOpened={isOpened}
         setIsOpened={setIsOpened}
         projectName={projectName}
-        
       />
       <div className="mainFrameRow" style={{ gap: "0" }}>
         <div className="col">
@@ -236,7 +249,7 @@ function MainPage() {
           />
         </div>
         <div className="project-list" style={{ gap: "20px", height: "100%" }}>
-          <div className="project-element" >
+          <div className="project-element">
             <CommitList
               isOpened={commitList.length != 0}
               commitList={commitList}

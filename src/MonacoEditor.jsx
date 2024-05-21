@@ -12,6 +12,7 @@ import Directory from "./Components/Directory";
 import Participants from "./Components/Participants";
 import Header from "./Components/Header";
 import Modal from "./Components/Modal";
+import CompileModal from "./Components/CompileModal";
 import { edit } from "ace-builds";
 import { editor } from "monaco-editor";
 
@@ -25,6 +26,7 @@ const MonacoEditor = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isOpened, setIsOpened] = useState(true);
   const [modalOpened, setModalOpened] = useState(false);
+  const [compileModalOpened, setCompileModalOpened] = useState(false);
   const [lineIndex, setLineIndex] = useState([]);
   const [code, setCode] = useState("");
   const [language, setLanguage] = useState("javascript");
@@ -33,7 +35,9 @@ const MonacoEditor = () => {
   const [comment, setComment] = useState("");
   const [active, setActive] = useState(false);
   const [compileResult, setCompileResult] = useState("");
-  
+  const [modalType, setModalType] = useState("upload");
+  const [newUserName, setNewUserName] = useState("");
+
   const isApplyingEdits = useRef(false);
   const pasteEvent = useRef(false);
 
@@ -68,7 +72,7 @@ const MonacoEditor = () => {
       console.error("모델이 없습니다.");
       return;
     }
-    
+
     let edit = {
       range: new monaco_editor.Range(
         currentLine,
@@ -81,7 +85,7 @@ const MonacoEditor = () => {
     };
 
     model.applyEdits([edit]);
-  }
+  };
 
   function handleEditorDidMount(editor, monaco) {
     editorRef.current = editor;
@@ -93,17 +97,15 @@ const MonacoEditor = () => {
       if (e.reason == 4) {
         pasteEvent.current = true;
       }
-
     });
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyV, () => {
       pasteEvent.current = true;
 
-      navigator.clipboard.readText().then(text => {
-        pasteData(text, editor)
+      navigator.clipboard.readText().then((text) => {
+        pasteData(text, editor);
       });
-      
     });
-  };
+  }
 
   /**
    * Socket
@@ -130,7 +132,6 @@ const MonacoEditor = () => {
       if (!users.includes(res.data)) {
         setUsers([...users, res.data]);
       }
-
     } catch (error) {
       console.error("error" + error);
     }
@@ -187,11 +188,25 @@ const MonacoEditor = () => {
     }
   }
 
-  const deleteFile = (e) => {
+  const deleteFile = async (e) => {
     e.preventDefault();
     e.stopPropagation();
-
-    alert("파일을 삭제하시겠습니까?");
+    const deleteType = window.confirm("정말로 삭제하시겠습니까?");
+    const deleteFileName = e.target.id;
+    try {
+      if (deleteType) {
+        const res = await API.post(
+          `/snapshot/remove`, {
+            roomId: teamName,
+            fileName: deleteFileName,
+          }
+        );
+        getSnapshotList();
+        setCode("");
+      }
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   const createFile = async (fileName) => {
@@ -224,6 +239,19 @@ const MonacoEditor = () => {
   //       monaco.editor.setTheme("tomorrow");
   //     }
   //   }, [monaco]);
+
+  useEffect(() => {
+    console.log("컴파일 결과: ", compileResult);
+    if (compileResult.length != 0) {
+      setCompileModalOpened(true);
+    }
+  }, [compileResult]);
+
+  useEffect(() => {
+    if (compileModalOpened == false) {
+      setCompileResult("");
+    }
+  }, [compileModalOpened]);
 
   const connect = () => {
     client.current = new StompJs.Client({
@@ -382,14 +410,13 @@ const MonacoEditor = () => {
       if (model.getLineCount() <= currentLine && newText.length >= 2) {
         // 마지막 라인에 추가
         console.log("마지막 라인에 추가");
-        if(newText.length < 3) {
-          if(newText.length == 1) {
-        text = newText[0] + "\n";
+        if (newText.length < 3) {
+          if (newText.length == 1) {
+            text = newText[0] + "\n";
           } else {
-            text = newText[0] + "\n" + newText[1]
+            text = newText[0] + "\n" + newText[1];
           }
-        }
-        else {
+        } else {
           text = newText[0] + "\n" + newText[1] + "\n" + newText[2];
         }
         edit = {
@@ -418,8 +445,7 @@ const MonacoEditor = () => {
             text: text,
             forceMoveMarkers: false,
           };
-        }
-        else {
+        } else {
           console.log("enter");
           text = newText[0] + "\n" + newText[1];
 
@@ -437,9 +463,7 @@ const MonacoEditor = () => {
           };
         }
       }
-    }
-
-    else if (type === "paste") {
+    } else if (type === "paste") {
       const lineContent = model.getLineContent(lineNumber + 1);
       let newCode = lineContent + newText[0];
 
@@ -457,9 +481,7 @@ const MonacoEditor = () => {
         text: newCode,
         forceMoveMarkers: false,
       };
-    }
-
-    else if (type === "drag") {
+    } else if (type === "drag") {
       console.log(parseInt(newText[0]));
       const line = parseInt(newText[0]) + lineNumber + 1;
       edit = {
@@ -471,10 +493,8 @@ const MonacoEditor = () => {
         ),
         text: "",
         forceMoveMarkers: false,
-      }
-    }
-
-    else {
+      };
+    } else {
       // 기본적인 텍스트 업데이트
       console.log("업데이트");
       const lineValue = model.getLineContent(currentLine);
@@ -508,13 +528,16 @@ const MonacoEditor = () => {
     const lineAfterNext = lines[lineNumber + 1]; // 다다음 줄
 
     // 커서 바로 앞 문자 가져오기
-    const beforeCursor = currentLine[cursorColumn - 2] == "\r" ? currentLine[cursorColumn - 3] : currentLine[cursorColumn - 2]; // 커서 바로 앞 문자
+    const beforeCursor =
+      currentLine[cursorColumn - 2] == "\r"
+        ? currentLine[cursorColumn - 3]
+        : currentLine[cursorColumn - 2]; // 커서 바로 앞 문자
 
     // 다다음 줄 첫 번째 문자 가져오기
     const lastCharAfterNextLine = lineAfterNext
-      ? (lineAfterNext[lineAfterNext.length - 1] === "\r"
+      ? lineAfterNext[lineAfterNext.length - 1] === "\r"
         ? lineAfterNext[lineAfterNext.length - 2]
-        : lineAfterNext[lineAfterNext.length - 1])
+        : lineAfterNext[lineAfterNext.length - 1]
       : "";
     console.log(
       "라인: ",
@@ -586,9 +609,7 @@ const MonacoEditor = () => {
         //   e.changes[0].range.endColumn
         // );
         pasteEvent.current = false;
-      }
-      else if (codeList.length < 4) {
-
+      } else if (codeList.length < 4) {
         const prevLine = editorRef.current
           .getModel()
           .getLineContent(currentLine - 1);
@@ -610,7 +631,7 @@ const MonacoEditor = () => {
           );
         }
 
-        // const line = editorRef.current.getLineCount() == currentLine - 1 ? currentLine - 2 : 
+        // const line = editorRef.current.getLineCount() == currentLine - 1 ? currentLine - 2 :
 
         publish(
           lineString,
@@ -681,8 +702,13 @@ const MonacoEditor = () => {
   };
 
   const handleInputChange = (e) => {
-    setComment(e.target.value);
-    comment === "" ? setActive(false) : setActive(true);
+    if (modalType === "upload") {
+      setComment(e.target.value);
+      comment === "" ? setActive(false) : setActive(true);
+    } else {
+      setNewUserName(e.target.value);
+      newUserName === "" ? setActive(false) : setActive(true);
+    }
   };
 
   // 작업중인 파일 S3 업로드
@@ -700,6 +726,18 @@ const MonacoEditor = () => {
     }
   }
 
+  const addUser = async () => {
+    try {
+      const res = await API.post(`/team/${teamName}/add/${newUserName}`);
+      if (res.status === 200) {
+        setNewUserName("");
+        setModalOpened(false);
+      }
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
   // const addFile = async () => {
   //   try {
   //     const res = await API.post(``)
@@ -712,14 +750,19 @@ const MonacoEditor = () => {
       <Modal
         isOpen={modalOpened}
         setIsOpen={setModalOpened}
-        addType={"Upload"}
-        kr={"내용"}
-        en={"comment"}
-        value={comment}
-        name={"comment"}
+        addType={modalType === "upload" ? "업로드" : "추가"}
+        kr={modalType === "upload" ? "내용" : "닉네임"}
+        en={modalType === "upload" ? "Comment" : "Nickname"}
+        value={modalType === "upload" ? comment : newUserName}
+        name={modalType === "upload" ? "comment" : "newUserName"}
         active={active}
-        onClick={uploadToS3}
+        onClick={modalType === "upload" ? uploadToS3 : addUser}
         onChange={handleInputChange}
+      />
+      <CompileModal
+        isOpen={compileModalOpened}
+        setIsOpen={setCompileModalOpened}
+        compileResult={compileResult}
       />
 
       <Header
@@ -730,6 +773,7 @@ const MonacoEditor = () => {
         setModalOpened={setModalOpened}
         setCompileResult={setCompileResult}
         language={language}
+        setModalType={setModalType}
       />
       <div className="mainFrameRow" style={{ gap: "0" }}>
         <div className="col">
@@ -775,7 +819,6 @@ const MonacoEditor = () => {
               automaticLayout: true,
             }}
           />
-          <div>{compileResult}</div>
         </div>
       </div>
     </>

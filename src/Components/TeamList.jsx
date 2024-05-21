@@ -2,6 +2,8 @@ import React from "react";
 import { Menu, MenuItem, Sidebar, SubMenu, sidebarClasses, menuClasses } from "react-pro-sidebar";
 import { GoArchive } from "react-icons/go";
 import { RiTeamLine } from "react-icons/ri";
+import { BsBuilding } from "react-icons/bs";
+
 
 const TeamList = ({ label, teamList, isCollapsed, setTeamName }) => {
 
@@ -40,7 +42,7 @@ const TeamList = ({ label, teamList, isCollapsed, setTeamName }) => {
     }}>
         <SubMenu label={label} defaultOpen="true">
         {teamList?.map((team, index) => (
-          <MenuItem icon={label == "Project" ? <GoArchive/> : <RiTeamLine/>} key={index} onClick={() => setTeamName(team)}>{team}</MenuItem>
+          <MenuItem icon={label == "Project" ? <GoArchive/> : <BsBuilding/>} key={index} onClick={() => setTeamName(team)}>{team}</MenuItem>
         ))}
         </SubMenu>
     </Menu>
