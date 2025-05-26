@@ -2,7 +2,7 @@
 
 ![Image](https://github.com/user-attachments/assets/3bc5706d-1844-439e-9422-07fcb3d84718)
 
-`SSC_FE-main`은 **React.js** 기반의 웹 프론트엔드 애플리케이션으로, 코드 편집기, 로그인/회원가입, 프로젝트/팀 관리 및 컴파일 모달 등 다양한 기능을 제공하는 개발 협업 도구입니다.
+`SSC_FE-main`은 **React.js** 기반의 웹 프론트엔드 애플리케이션으로, 실시간 코드 편집기, 로그인/회원가입, 프로젝트/팀 관리 및 컴파일 모달 등 다양한 기능을 제공하는 개발 협업 도구입니다.
 
 ---
 
@@ -73,13 +73,6 @@ src/
   * STOMP over WebSocket 연결 설정 구조 존재
   * 실시간 협업, 채팅 기능의 기반 가능
 
-### 🧱 기타 UI 구성 요소
-
-* **버튼류**: `BackButton`, `CloseButton`, `SaveButton`, `DownloadButton`, `UserButton`
-* **레이아웃/입력**: `Header`, `MainHeader`, `InputText`, `UserInput`, `Nickname`
-* **폴더 구조 UI**: `Directory.jsx`, `Folder.jsx`, `DragnDrop.jsx`
-* **참여자 정보**: `Participants.jsx`, `Profile.jsx`
-
 ---
 
 ## ⚙️ 설치 및 실행
@@ -97,5 +90,7 @@ npm start
 
 * **SockJS + STOMP.js** – WebSocket 통신
 * **Monaco Editor** – 코드 편집기
-
+* **Highlight.js** – 코드 하이라이팅 처리
+* **react-vertical-timeline-component** – 커밋 히스토리 및 프로젝트 타임라인 시각화
+* **react-pro-sidebar** – 사이드바 UI 구성 요소
 ---
