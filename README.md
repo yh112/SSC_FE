@@ -106,13 +106,3 @@ npm start
 * **react-icons**, **react-router-dom** – UI 및 라우팅
 
 ---
-
-## 🧪 테스트
-
-* `App.test.js`, `setupTests.js`가 포함되어 기본적인 테스트 구조 지원
-
-```bash
-npm test
-```
-
----
