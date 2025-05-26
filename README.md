@@ -95,14 +95,7 @@ npm start
 
 ## 📦 사용된 주요 라이브러리
 
-> 실제 코드의 `package.json` 기준
-
-* **React 18**
-* **Axios** – API 호출
 * **SockJS + STOMP.js** – WebSocket 통신
 * **Monaco Editor** – 코드 편집기
-* **moment** – 시간 포맷
-* **zustand** – 상태관리 (store 파일 미탐색됨)
-* **react-icons**, **react-router-dom** – UI 및 라우팅
 
 ---
