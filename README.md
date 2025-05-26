@@ -1,5 +1,7 @@
 # 💻 SSC\_FE-main
 
+![Image](https://github.com/user-attachments/assets/3bc5706d-1844-439e-9422-07fcb3d84718)
+
 `SSC_FE-main`은 **React.js** 기반의 웹 프론트엔드 애플리케이션으로, 코드 편집기, 로그인/회원가입, 프로젝트/팀 관리 및 컴파일 모달 등 다양한 기능을 제공하는 개발 협업 도구입니다.
 
 ---
